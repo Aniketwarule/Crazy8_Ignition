@@ -3,16 +3,10 @@ import algosdk from 'algosdk';
 import crypto from 'crypto';
 import Agent from '../models/Agent';
 
-// Mock DB of used transaction IDs to prevent double spend
-// In production, this should be in MongoDB
 const usedTxIds = new Set<string>();
 
-// Initialize Algorand Indexer (using public TestNet node for Hackathon)
 const indexerClient = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '');
 
-// ─────────────────────────────────────────────────────────────
-// The Master Proxy Route (Dual Router + L402 Verification)
-// ─────────────────────────────────────────────────────────────
 export const generateRoute = async (req: Request, res: Response): Promise<void> => {
   try {
     const { prompt, agentId } = req.body;
@@ -23,16 +17,13 @@ export const generateRoute = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Lookup Agent in DB
     const agent = await Agent.findById(agentId);
     if (!agent) {
       res.status(404).json({ error: 'Agent not found' });
       return;
     }
 
-    // The required cost in MicroAlgos (1 ALGO = 1,000,000 mALGO)
     const requiredAmount = Math.round(agent.price * 1_000_000);
-    // Destination is the creator wallet
     const requiredAddress = agent.creatorWallet;
 
     // ─── Step 1: The L402 Intercept ───

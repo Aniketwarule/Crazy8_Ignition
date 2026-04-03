@@ -2,7 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { generateRoute } from './routes/generate';
 import { generateApiKey, hitApiKey, getApiKeyStats } from './routes/apikeys';
 import baseModelsRouter from './routes/baseModels';
 
@@ -24,16 +23,15 @@ app.use('/api/base-models', baseModelsRouter);
 app.post('/api/apikeys/generate', generateApiKey);
 app.post('/api/apikeys/hit', hitApiKey);
 app.get('/api/apikeys/stats', getApiKeyStats);
+app.use('/api', agentRoutes);
 
 const startServer = async () => {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/ignition';
-    console.log(`[Init] Connecting to MongoDB at ${mongoUri}...`);
-    await mongoose.connect(mongoUri);
-    console.log('[Init] MongoDB Connected Successfully.');
+    await mongoose.connect(mongoUri).then(() => console.log('Connected to db')).catch((error) => console.log(error));
 
     app.listen(PORT, () => {
-      console.log(`[Init] Ignition Gateway running on http://localhost:${PORT}`);
+      console.log(`Server started on http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('[Init] Server startup failed:', error);

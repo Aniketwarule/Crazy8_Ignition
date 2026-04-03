@@ -29,6 +29,7 @@ interface AgentFormState {
   systemPrompt: string
   endpointUrl: string
   priceAlgo: number
+  APIkey: string
 }
 
 interface DeployLog {
@@ -53,6 +54,7 @@ const INITIAL_FORM: AgentFormState = {
   systemPrompt: '',
   endpointUrl: '',
   priceAlgo: 0.1,
+  APIkey: ''
 }
 
 // ─────────────────────────────────────────────────────
@@ -417,6 +419,20 @@ export default function Publish() {
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                   </div>
+                </div>
+                
+                {/* API key URL */}
+                <div className="space-y-1.5 animate-fade-in">
+                  <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
+                      Your API key
+                  </label>
+                  <input
+                    type="url"
+                    value={form.APIkey}
+                    onChange={(e) => updateField('APIkey', e.target.value)}
+                    placeholder="Enter your API key here"
+                    className="w-full px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none placeholder:text-gray-500 focus:border-purple-400/50 transition-colors"
+                  />
                 </div>
 
                 {/* System Prompt */}
