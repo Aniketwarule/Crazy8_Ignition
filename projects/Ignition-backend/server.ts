@@ -2,8 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { generateApiKey, hitApiKey, getApiKeyStats } from './routes/apikeys';
-import agentRoutes from './routes/agent.routes'; 
+import { generateApiKey, hitApiKey, chatCompletion, getApiKeyStats } from './routes/apikeys';
+import agentRoutes from './routes/agent.routes';
 
 dotenv.config();
 
@@ -14,7 +14,8 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/api/apikeys/generate', generateApiKey);
-app.post('/api/apikeys/hit', hitApiKey);
+app.post('/api/apikeys/chat', chatCompletion);   // OpenAI-compatible chat endpoint
+app.post('/api/apikeys/hit', hitApiKey);          // Legacy simple prompt endpoint
 app.get('/api/apikeys/stats', getApiKeyStats);
 app.use('/api', agentRoutes);
 
