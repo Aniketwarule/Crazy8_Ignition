@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Zap, ArrowLeft, Key, Copy, Check, RefreshCw, Shield, AlertCircle, Terminal, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Key, Copy, Check, RefreshCw, Shield, AlertCircle, Terminal, ChevronDown } from 'lucide-react'
 import { usePeraWallet } from '../hooks/usePeraWallet'
 import { ellipseAddress } from '../utils/ellipseAddress'
 import { BASE_MODELS } from '../types/models'
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080'
 
 export default function ApiKey() {
   const { address, isConnected, connect, isConnecting } = usePeraWallet()
@@ -11,23 +13,56 @@ export default function ApiKey() {
   const [selectedModelId, setSelectedModelId] = useState<string>(BASE_MODELS[0].id)
   const [isGenerating, setIsGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [hits, setHits] = useState<number>(0)
+  const [error, setError] = useState<string | null>(null)
+
+  // Poll stats when we have a key
+  useEffect(() => {
+    if (!apiKey) return
+
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/apikeys/stats?key=${encodeURIComponent(apiKey)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setHits(data.hits)
+        }
+      } catch {
+        // Silently fail on poll — backend may be down
+      }
+    }
+
+    fetchStats()
+    const interval = setInterval(fetchStats, 5000) // refresh every 5s
+    return () => clearInterval(interval)
+  }, [apiKey])
 
   const generateKey = useCallback(async () => {
     if (!address || !selectedModelId) return
     setIsGenerating(true)
-    
-    // Simulate API call to generate key
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    const randomBytes = Array.from(crypto.getRandomValues(new Uint8Array(20)))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-    
-    // Include model ID in the key for demonstration
-    const newKey = `ign_${selectedModelId.substring(0, 4)}_${randomBytes}`
-    
-    setApiKey(newKey)
-    setIsGenerating(false)
+    setError(null)
+
+    try {
+      const res = await fetch(`${API_BASE}/api/apikeys/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address, modelId: selectedModelId }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || 'Failed to generate API key')
+      }
+
+      const data = await res.json()
+      setApiKey(data.apiKey)
+      setHits(data.hits)
+    } catch (err: any) {
+      console.error('[ApiKey] Generation failed:', err)
+      setError(err.message || 'Failed to connect to backend')
+    } finally {
+      setIsGenerating(false)
+    }
   }, [address, selectedModelId])
 
   const copyToClipboard = useCallback(() => {
@@ -37,9 +72,10 @@ export default function ApiKey() {
     setTimeout(() => setCopied(false), 2000)
   }, [apiKey])
 
+  const selectedModel = BASE_MODELS.find(m => m.id === selectedModelId)
+
   return (
     <div className="flex flex-col h-screen bg-[#0A0A0A] text-white overflow-hidden">
-      {/* Scan-line overlay */}
       <div className="scan-line-overlay" />
 
       {/* ─── Header ─── */}
@@ -128,6 +164,18 @@ export default function ApiKey() {
               </div>
             </div>
 
+            {/* Error Banner */}
+            {error && (
+              <div className="border border-red-500/30 bg-red-500/5 p-4 font-mono text-xs text-red-400 flex items-start gap-2 animate-fade-in">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold uppercase tracking-wider mb-1">Connection Error</p>
+                  <p className="text-red-400/80">{error}</p>
+                  <p className="text-gray-600 mt-1">Make sure the backend is running on {API_BASE}</p>
+                </div>
+              </div>
+            )}
+
             {/* Model Selection Dropdown */}
             <div className="space-y-3">
               <label className="text-xs font-mono text-gray-400 uppercase tracking-wider font-bold">
@@ -138,13 +186,15 @@ export default function ApiKey() {
                   value={selectedModelId}
                   onChange={(e) => {
                     setSelectedModelId(e.target.value)
-                    setApiKey(null) // Clear existing key when model changes
+                    setApiKey(null)
+                    setHits(0)
+                    setError(null)
                   }}
                   className="w-full bg-[#0d0d0d] border border-gray-700 p-3 pr-10 font-mono text-sm text-white outline-none appearance-none focus:border-terminal-green transition-all"
                 >
                   {BASE_MODELS.map(model => (
                     <option key={model.id} value={model.id}>
-                      {model.name} — {model.category.toUpperCase()} — {model.cost} ALGO
+                      {model.name} — {model.cost} ALGO/req
                     </option>
                   ))}
                 </select>
@@ -162,13 +212,13 @@ export default function ApiKey() {
                   <span>Your API Key</span>
                   {apiKey && (
                     <span className="px-1.5 py-0.5 bg-terminal-green/10 text-terminal-green border border-terminal-green/30 text-[9px]">
-                      {BASE_MODELS.find(m => m.id === selectedModelId)?.name.toUpperCase()}
+                      {selectedModel?.name.toUpperCase()}
                     </span>
                   )}
                 </h3>
                 {apiKey && (
                   <button 
-                    onClick={() => { setApiKey(null); generateKey(); }}
+                    onClick={() => { setApiKey(null); setHits(0); generateKey(); }}
                     className="flex items-center gap-1.5 text-[10px] font-mono text-gray-500 hover:text-terminal-yellow transition-colors"
                   >
                     <RefreshCw className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} />
@@ -232,7 +282,37 @@ export default function ApiKey() {
               )}
             </div>
 
-            {/* Quick Start Sidebar/Bottom */}
+            {/* ─── Usage Stats Panel ─── */}
+            {apiKey && (
+              <div className="border border-gray-700 bg-[#0d0d0d] p-5 space-y-4 animate-fade-in">
+                <h3 className="text-xs font-mono text-gray-400 uppercase tracking-wider font-bold">
+                  Usage Monitor
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="border border-gray-700/50 p-4 text-center">
+                    <p className="text-3xl font-mono font-bold text-terminal-green">{hits}</p>
+                    <p className="text-[10px] font-mono text-gray-500 uppercase mt-1">Total Hits</p>
+                  </div>
+                  <div className="border border-gray-700/50 p-4 text-center">
+                    <p className="text-3xl font-mono font-bold text-terminal-yellow">
+                      {(hits * (selectedModel?.cost || 0)).toFixed(2)}
+                    </p>
+                    <p className="text-[10px] font-mono text-gray-500 uppercase mt-1">ALGO Accrued</p>
+                  </div>
+                  <div className="border border-gray-700/50 p-4 text-center">
+                    <p className="text-3xl font-mono font-bold text-purple-400">
+                      {selectedModel?.cost || 0}
+                    </p>
+                    <p className="text-[10px] font-mono text-gray-500 uppercase mt-1">ALGO / Request</p>
+                  </div>
+                </div>
+                <p className="text-[10px] font-mono text-gray-600 text-center">
+                  Stats refresh automatically every 5 seconds
+                </p>
+              </div>
+            )}
+
+            {/* Quick Start */}
             <div className="space-y-4 pt-4">
               <h3 className="text-xs font-mono text-gray-400 uppercase tracking-wider font-bold">Quick Start</h3>
               <div className="border border-gray-700 bg-[#0d0d0d] p-4 font-mono text-xs space-y-3">
@@ -240,13 +320,18 @@ export default function ApiKey() {
                   <span className="text-terminal-green">#</span> Example request using cURL
                 </div>
                 <div className="bg-black/50 p-3 text-gray-300 leading-relaxed overflow-x-auto whitespace-pre">
-{`curl -X POST https://api.ignition.ai/v1/chat \\
+{`curl -X POST ${API_BASE}/api/apikeys/hit \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "${selectedModelId}",
     "prompt": "Hello via API"
   }'`}
+                </div>
+                <div className="text-gray-500 flex items-center gap-2 pt-2 border-t border-gray-700/30">
+                  <span className="text-terminal-green">#</span> Check your usage stats
+                </div>
+                <div className="bg-black/50 p-3 text-gray-300 leading-relaxed overflow-x-auto whitespace-pre">
+{`curl ${API_BASE}/api/apikeys/stats?key=YOUR_API_KEY`}
                 </div>
               </div>
             </div>

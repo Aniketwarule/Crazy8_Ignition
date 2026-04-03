@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { generateRoute } from './routes/generate';
+import { generateApiKey, hitApiKey, getApiKeyStats } from './routes/apikeys';
 
 dotenv.config();
 
@@ -14,6 +15,11 @@ app.use(express.json());
 
 // Main Proxy endpoint
 app.post('/api/generate', generateRoute);
+
+// API Key management
+app.post('/api/apikeys/generate', generateApiKey);
+app.post('/api/apikeys/hit', hitApiKey);
+app.get('/api/apikeys/stats', getApiKeyStats);
 
 const startServer = async () => {
   try {
