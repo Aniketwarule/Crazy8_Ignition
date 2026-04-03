@@ -8,7 +8,11 @@ import type { AIModel } from '../types/models'
 // Constants & Helpers
 // ─────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_API_URL || '/api/generate'
+const API_URL =
+  import.meta.env.VITE_BASE_MODELS_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:8080/api/base-models/generate'
+const IGNITION_GATEWAY_APP_ID = Number(import.meta.env.VITE_IGNITION_GATEWAY_APP_ID || '0')
 let _counter = 0
 
 function log(
@@ -42,12 +46,26 @@ async function parseChallenge(res: Response): Promise<L402Challenge> {
   }
   // Fallback: JSON body
   const body = await res.json()
+  const amountAlgos = Number(body.amountAlgos ?? body.requiredAmountAlgo ?? body.price ?? 0)
   return {
-    amountMicroAlgos: body.amountMicroAlgos ?? Math.round((body.amountAlgos ?? body.price ?? 0) * 1e6),
-    amountAlgos: body.amountAlgos ?? body.price ?? 0,
+    amountMicroAlgos: body.amountMicroAlgos ?? body.requiredAmountMicroAlgos ?? Math.round(amountAlgos * 1e6),
+    amountAlgos,
     creatorAddress: body.creatorAddress ?? body.destinationAddress ?? body.payTo ?? '',
     invoiceId: body.invoiceId ?? body.id ?? '',
     message: body.message ?? 'Payment required',
+  }
+}
+
+function createPeraSigner(
+  peraWallet: { signTransaction: (txGroups: Array<Array<{ txn: algosdk.Transaction; signers: string[] }>>) => Promise<Uint8Array[]> },
+  address: string,
+): algosdk.TransactionSigner {
+  return async (txnGroup, indexesToSign) => {
+    const txnsToSign = indexesToSign.map((index) => ({
+      txn: txnGroup[index],
+      signers: [address],
+    }))
+    return peraWallet.signTransaction([txnsToSign])
   }
 }
 
@@ -106,6 +124,25 @@ export function useDualL402(selectedModel: AIModel | null) {
         push('ERROR: Select a model first.', 'FAIL')
         return
       }
+      if (selectedModel.category !== 'base') {
+        push('ERROR: Community agents are not wired to this base-model endpoint yet.', 'FAIL')
+        return
+      }
+      if (!IGNITION_GATEWAY_APP_ID) {
+        push('ERROR: Missing VITE_IGNITION_GATEWAY_APP_ID in frontend env.', 'FAIL')
+        return
+      }
+
+      const modelForBackend = selectedModel.id.startsWith('gemini') ? selectedModel.id : 'gemini-1.5-pro'
+      if (modelForBackend !== selectedModel.id) {
+        push(`INFO: Backend currently supports Gemini. Using ${modelForBackend}.`, 'INFO')
+      }
+
+      const treasuryAddress = import.meta.env.VITE_IGNITION_TREASURY_ADDRESS || selectedModel.destinationAddress
+      if (!algosdk.isValidAddress(treasuryAddress)) {
+        push('ERROR: Invalid treasury address. Set VITE_IGNITION_TREASURY_ADDRESS.', 'FAIL')
+        return
+      }
 
       setState({ isProcessing: true, currentStep: 'requesting', txId: null, error: null })
 
@@ -119,15 +156,15 @@ export function useDualL402(selectedModel: AIModel | null) {
         : selectedModel.creator ?? 'Creator'
       push(`[${modeTag}] ${selectedModel.name} | ${selectedModel.cost} ALGO → ${destLabel}`, 'INFO')
 
-      // ─── Step 1: POST to /api/generate ───
-      const reqId = push(`POST ${API_URL} {modelId: "${selectedModel.id}"} — awaiting...`, 'PENDING')
+      // ─── Step 1: POST to /api/base-models/generate ───
+      const reqId = push(`POST ${API_URL} {model: "${modelForBackend}"} — awaiting...`, 'PENDING')
 
       let res: Response
       try {
         res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, modelId: selectedModel.id }),
+          body: JSON.stringify({ prompt, model: modelForBackend }),
         })
       } catch {
         patch(reqId, { status: 'FAIL', message: `POST ${API_URL} — network error` })
@@ -166,44 +203,54 @@ export function useDualL402(selectedModel: AIModel | null) {
         return
       }
 
-      const destAddr = challenge.creatorAddress || selectedModel.destinationAddress
+      const destAddr = treasuryAddress
       const amount = challenge.amountMicroAlgos || selectedModel.costMicroAlgos
       const amountAlgo = (amount / 1e6).toFixed(2)
 
       push(`Invoice: ${challenge.invoiceId} | ${amountAlgo} ALGO → ${destAddr.slice(0, 6)}...${destAddr.slice(-4)}`, 'INFO')
 
-      // ─── Step 4: Build Algorand payment txn ───
+      // ─── Step 4: Build grouped payment + app-call transactions ───
       setStep('signing')
       const signId = push('Awaiting Pera Wallet signature...', 'PENDING')
 
       try {
         const algod = getAlgodClient()
         const params = await algod.getTransactionParams().do()
+        const signer = createPeraSigner(peraWallet, address)
 
-        const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          from: address,
-          to: destAddr,
+        const payTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+          sender: address,
+          receiver: destAddr,
           amount: amount,
           suggestedParams: params,
-          note: new TextEncoder().encode(`ignition:${selectedModel.id}:${challenge.invoiceId}`),
+          note: new TextEncoder().encode(`ignition:base:${selectedModel.id}:${challenge.invoiceId || Date.now()}`),
+        })
+
+        const atc = new algosdk.AtomicTransactionComposer()
+        atc.addMethodCall({
+          appID: IGNITION_GATEWAY_APP_ID,
+          method: algosdk.ABIMethod.fromSignature('payForAi(pay)void'),
+          sender: address,
+          suggestedParams: params,
+          signer,
+          methodArgs: [{ txn: payTxn, signer }],
         })
 
         // ─── Step 5: Sign with Pera ───
-        const signedTxns = await peraWallet.signTransaction([
-          [{ txn, signers: [address] }],
-        ])
         patch(signId, { status: 'OK', message: 'Wallet signature received' })
 
         // ─── Step 6: Broadcast ───
         setStep('broadcasting')
         const broadId = push('Broadcasting to Algorand...', 'PENDING')
 
-        const txId = txn.txID()
-        await algod.sendRawTransaction(signedTxns[0]).do()
-        await algosdk.waitForConfirmation(algod, txId, 4)
+        const atcResult = await atc.execute(algod, 4)
+        const txId = atcResult.methodResults?.[0]?.txID || atcResult.txIDs[atcResult.txIDs.length - 1]
+        if (!txId) {
+          throw new Error('Unable to determine IgnitionGateway app call txId')
+        }
 
         patch(broadId, { status: 'OK', message: 'Transaction confirmed on-chain' })
-        push(`TxID: ${txId}`, 'INFO')
+        push(`Gateway app-call TxID: ${txId}`, 'INFO')
         setState((s) => ({ ...s, txId }))
 
         // Refresh wallet balance
@@ -221,7 +268,7 @@ export function useDualL402(selectedModel: AIModel | null) {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${txId}`,
             },
-            body: JSON.stringify({ prompt, modelId: selectedModel.id }),
+            body: JSON.stringify({ prompt, model: modelForBackend }),
           })
         } catch {
           patch(retryId, { status: 'FAIL', message: 'Retry failed — network error' })

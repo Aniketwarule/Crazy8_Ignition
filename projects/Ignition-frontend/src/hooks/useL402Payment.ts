@@ -210,8 +210,8 @@ export function useL402Payment() {
         const suggestedParams = await algodClient.getTransactionParams().do()
 
         const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          from: activeAddress,
-          to: challenge.creatorAddress,
+          sender: activeAddress,
+          receiver: challenge.creatorAddress,
           amount: challenge.amountMicroAlgos,
           suggestedParams,
           note: new TextEncoder().encode(`ignition:${challenge.invoiceId}`),

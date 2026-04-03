@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { generateRoute } from './routes/generate';
 import { generateApiKey, hitApiKey, getApiKeyStats } from './routes/apikeys';
+import baseModelsRouter from './routes/baseModels';
 
 dotenv.config();
 
@@ -15,6 +16,9 @@ app.use(express.json());
 
 // Main Proxy endpoint
 app.post('/api/generate', generateRoute);
+
+// Base model L402 endpoint
+app.use('/api/base-models', baseModelsRouter);
 
 // API Key management
 app.post('/api/apikeys/generate', generateApiKey);

@@ -78,12 +78,13 @@ export interface AllowanceState {
   logicSigAddress: string | null
 }
 
-/** Shape of the POST body sent to /api/generate */
+/** Shape of the POST body sent to /api/base-models/generate */
 export interface GenerateRequest {
   prompt: string
+  model: string
 }
 
-/** Shape of a successful /api/generate response */
+/** Shape of a successful /api/base-models/generate response */
 export interface GenerateResponse {
   /** The AI-generated text */
   result: string
