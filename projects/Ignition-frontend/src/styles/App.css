@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────
+   IGNITION — Terminal Brutalist Design System
+   ───────────────────────────────────────────────────── */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #0A0A0A;
+    color: #E0E0E0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    overflow: hidden;
+  }
+
+  ::selection {
+    background-color: #00FFA333;
+    color: #00FFA3;
+  }
+
+  /* Custom scrollbar — brutal thin style */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0A0A0A;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 0;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #00FFA3;
+  }
+}
+
+@layer components {
+  /* Terminal window chrome dots */
+  .terminal-dot {
+    @apply w-2.5 h-2.5 rounded-full;
+  }
+
+  /* Status badges */
+  .badge-ok {
+    @apply text-terminal-green font-bold;
+  }
+  .badge-pending {
+    @apply text-terminal-yellow font-bold animate-pulse-slow;
+  }
+  .badge-fail {
+    @apply text-terminal-red font-bold;
+  }
+  .badge-info {
+    @apply text-terminal-teal font-bold;
+  }
+
+  /* Brutalist button — no rounded corners */
+  .btn-brutal {
+    @apply px-4 py-2 border border-terminal-green/30 bg-transparent text-terminal-green
+           font-mono text-sm tracking-wider uppercase cursor-pointer
+           transition-all duration-150;
+  }
+  .btn-brutal:hover {
+    @apply bg-terminal-green/10 border-terminal-green shadow-[0_0_12px_rgba(0,255,163,0.15)];
+  }
+  .btn-brutal:disabled {
+    @apply opacity-30 cursor-not-allowed border-terminal-dim text-terminal-dim;
+  }
+  .btn-brutal:disabled:hover {
+    @apply bg-transparent shadow-none;
+  }
+
+  /* Toggle switch — brutalist style */
+  .toggle-brutal {
+    @apply relative w-10 h-5 border border-terminal-dim bg-transparent cursor-pointer transition-colors duration-200;
+  }
+  .toggle-brutal.active {
+    @apply border-terminal-green bg-terminal-green/10;
+  }
+  .toggle-brutal .toggle-knob {
+    @apply absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-terminal-dim transition-all duration-200;
+  }
+  .toggle-brutal.active .toggle-knob {
+    @apply left-[calc(100%-18px)] bg-terminal-green;
+  }
+
+  /* Scan line overlay effect */
+  .scan-line-overlay {
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
+  }
+}
+
+@layer utilities {
+  .text-shadow-green {
+    text-shadow: 0 0 8px rgba(0, 255, 163, 0.3);
+  }
+  .text-shadow-green-strong {
+    text-shadow: 0 0 12px rgba(0, 255, 163, 0.5), 0 0 24px rgba(0, 255, 163, 0.2);
+  }
+}
