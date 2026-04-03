@@ -14,6 +14,7 @@ export default function ApiKey() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
   const [hits, setHits] = useState<number>(0)
+  const [accruedAlgo, setAccruedAlgo] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
 
   // Poll stats when we have a key
@@ -26,6 +27,7 @@ export default function ApiKey() {
         if (res.ok) {
           const data = await res.json()
           setHits(data.hits)
+          setAccruedAlgo(data.accruedAlgo || 0)
         }
       } catch {
         // Silently fail on poll — backend may be down
@@ -295,19 +297,19 @@ export default function ApiKey() {
                   </div>
                   <div className="border border-gray-700/50 p-4 text-center">
                     <p className="text-3xl font-mono font-bold text-terminal-yellow">
-                      {(hits * (selectedModel?.cost || 0)).toFixed(2)}
+                      {accruedAlgo.toFixed(6)}
                     </p>
                     <p className="text-[10px] font-mono text-gray-500 uppercase mt-1">ALGO Accrued</p>
                   </div>
                   <div className="border border-gray-700/50 p-4 text-center">
                     <p className="text-3xl font-mono font-bold text-purple-400">
-                      {selectedModel?.cost || 0}
+                      {selectedModel?.tokenPrice || 0}
                     </p>
-                    <p className="text-[10px] font-mono text-gray-500 uppercase mt-1">ALGO / Request</p>
+                    <p className="text-[10px] font-mono text-gray-500 uppercase mt-1">ALGO / 1K Tokens</p>
                   </div>
                 </div>
-                <p className="text-[10px] font-mono text-gray-600 text-center">
-                  Stats refresh automatically every 5 seconds
+                <p className="text-[10px] font-mono text-gray-600 text-center uppercase tracking-tighter">
+                  Real-time billing: {selectedModel?.tokenPrice} ALGO per 1,000 tokens processed
                 </p>
               </div>
             )}
@@ -317,15 +319,26 @@ export default function ApiKey() {
               <h3 className="text-xs font-mono text-gray-400 uppercase tracking-wider font-bold">Quick Start</h3>
               <div className="border border-gray-700 bg-[#0d0d0d] p-4 font-mono text-xs space-y-3">
                 <div className="text-gray-500 flex items-center gap-2">
-                  <span className="text-terminal-green">#</span> Example request using cURL
+                  <span className="text-terminal-green">#</span> OpenAI-compatible chat completions
+                </div>
+                <div className="bg-black/50 p-3 text-gray-300 leading-relaxed overflow-x-auto whitespace-pre">
+{`curl -X POST ${API_BASE}/api/apikeys/chat \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'`}
+                </div>
+                <div className="text-gray-500 flex items-center gap-2 pt-2 border-t border-gray-700/30">
+                  <span className="text-terminal-green">#</span> Simple prompt endpoint (legacy)
                 </div>
                 <div className="bg-black/50 p-3 text-gray-300 leading-relaxed overflow-x-auto whitespace-pre">
 {`curl -X POST ${API_BASE}/api/apikeys/hit \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{
-    "prompt": "Hello via API"
-  }'`}
+  -d '{"prompt": "Hello via API"}'`}
                 </div>
                 <div className="text-gray-500 flex items-center gap-2 pt-2 border-t border-gray-700/30">
                   <span className="text-terminal-green">#</span> Check your usage stats

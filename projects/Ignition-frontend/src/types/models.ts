@@ -13,8 +13,10 @@ export interface AIModel {
   id: string
   name: string
   description: string
-  /** Cost in ALGO */
+  /** Cost in ALGO per request (legacy) */
   cost: number
+  /** Cost in ALGO per 1000 tokens */
+  tokenPrice: number
   /** Cost in microAlgos (1 ALGO = 1,000,000) */
   costMicroAlgos: number
   /** Where the payment goes */
@@ -36,6 +38,8 @@ export const TREASURY_ADDRESS =
 
 export const BASE_MODELS: AIModel[] = [
   {
+    cost: 0.01,
+    tokenPrice: 0.01, // 0.01 ALGO per 1000 tokens
     id: 'gemini-2.0-flash',
     name: 'Gemini 2.0 Flash',
     description: "Google's fast multimodal model",
@@ -49,7 +53,8 @@ export const BASE_MODELS: AIModel[] = [
     id: 'gpt-4o',
     name: 'GPT-4o',
     description: "OpenAI's flagship model",
-    cost: 0.3,
+    cost: 0.05,
+    tokenPrice: 0.05, // 0.05 ALGO per 1000 tokens
     costMicroAlgos: 300_000,
     destinationType: 'treasury',
     destinationAddress: TREASURY_ADDRESS,
@@ -59,7 +64,8 @@ export const BASE_MODELS: AIModel[] = [
     id: 'claude-3-opus',
     name: 'Claude 3 Opus',
     description: "Anthropic's most capable model",
-    cost: 0.4,
+    cost: 0.08,
+    tokenPrice: 0.08, // 0.08 ALGO per 1000 tokens
     costMicroAlgos: 400_000,
     destinationType: 'treasury',
     destinationAddress: TREASURY_ADDRESS,
@@ -73,8 +79,9 @@ export const COMMUNITY_AGENTS: AIModel[] = [
   {
     id: 'sc-auditor-alice',
     name: 'Smart Contract Auditor',
-    description: 'TEAL/PyTeal security audit agent',
-    cost: 0.5,
+    description: 'TEAL/PyTeal security audit audit agent',
+    cost: 0.01,
+    tokenPrice: 0.1, // 0.1 ALGO per 1000 tokens
     costMicroAlgos: 500_000,
     destinationType: 'creator',
     destinationAddress: 'ALICEAUDITOR00000000000000000000000000000000000000000000000000',
@@ -85,7 +92,8 @@ export const COMMUNITY_AGENTS: AIModel[] = [
     id: 'web3-copywriter-bob',
     name: 'Web3 Copywriter',
     description: 'Marketing copy for Web3 projects',
-    cost: 0.2,
+    cost: 0.04,
+    tokenPrice: 0.04, // 0.04 ALGO per 1000 tokens
     costMicroAlgos: 200_000,
     destinationType: 'creator',
     destinationAddress: 'BOBCOPYWRITER00000000000000000000000000000000000000000000000000',
