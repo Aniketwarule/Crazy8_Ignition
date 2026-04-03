@@ -16,13 +16,10 @@ import {
 } from 'lucide-react'
 import { usePeraWallet } from '../hooks/usePeraWallet'
 import { ellipseAddress } from '../utils/ellipseAddress'
-
-// ─────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────
+import ApiService from '../utils/APIService'
 
 interface AgentFormState {
-  agentName: string
+  name: string
   description: string
   hostingType: 'internal' | 'external'
   baseModel: string
@@ -47,7 +44,7 @@ const BASE_MODEL_OPTIONS = [
 ] as const
 
 const INITIAL_FORM: AgentFormState = {
-  agentName: '',
+  name: '',
   description: '',
   hostingType: 'internal',
   baseModel: '',
@@ -56,10 +53,6 @@ const INITIAL_FORM: AgentFormState = {
   priceAlgo: 0.1,
   APIkey: ''
 }
-
-// ─────────────────────────────────────────────────────
-// Helper: Status badge
-// ─────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: DeployLog['status'] }) {
   switch (status) {
@@ -74,9 +67,6 @@ function StatusBadge({ status }: { status: DeployLog['status'] }) {
   }
 }
 
-// ─────────────────────────────────────────────────────
-// Page Component
-// ─────────────────────────────────────────────────────
 
 export default function Publish() {
   const { address, isConnected, connect, isConnecting } = usePeraWallet()
@@ -102,85 +92,60 @@ export default function Publish() {
     setLogs((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)))
   }, [])
 
-  // ─── Simulated deploy ───
-
   const handleDeploy = useCallback(
     async (e: FormEvent) => {
       e.preventDefault()
-      if (!address || !form.agentName) return
-      if (form.hostingType === 'internal' && (!form.baseModel || !form.systemPrompt)) return
-      if (form.hostingType === 'external' && !form.endpointUrl) return
+      if (!address || !form.name) return;
+      if (form.hostingType === 'internal' && (!form.baseModel || !form.systemPrompt)) return;
+      if (form.hostingType === 'external' && !form.endpointUrl) return;
 
       setPhase('deploying')
       setLogs([])
 
       const payload = {
         ...form,
-        creatorAddress: address,
+        creatorWallet: address,
       }
 
-      // Step 1: Validate
       const v = pushLog('Validating agent configuration...', 'PENDING')
-      await sleep(600)
-      patchLog(v, { status: 'OK', message: 'Agent configuration validated' })
-
-      // Step 2: Encrypt
-      const enc = pushLog('Encrypting system prompt (AES-256-GCM)...', 'PENDING')
-      await sleep(900)
-      patchLog(enc, { status: 'OK', message: 'System prompt encrypted — stored securely' })
-
-      // Step 3: Push to registry
-      const reg = pushLog(`POST /api/agents/publish — pushing to registry...`, 'PENDING')
-      await sleep(1200)
-
+      await sleep(400)
+      patchLog(v, { status: 'OK', message: 'Configuration valid' })
+      const reg = pushLog(`POST /api/agents/create — pushing to registry...`, 'PENDING')
+    
       try {
-        // Simulated API call — replace with real fetch in production
-        console.log('[Ignition] Publishing agent:', payload)
-
-        // Simulate success
-        patchLog(reg, { status: 'OK', message: 'Agent pushed to registry' })
-
-        // Step 4: Indexing
-        const idx = pushLog('Indexing agent in Community Agents directory...', 'PENDING')
-        await sleep(700)
-        patchLog(idx, { status: 'OK', message: 'Agent indexed and discoverable' })
-
-        // Summary
-        pushLog(`Agent "${form.agentName}" is live on Ignition`, 'INFO')
-        pushLog(`Creator: ${ellipseAddress(address, 6)}`, 'INFO')
-        pushLog(`Price: ${form.priceAlgo} ALGO/request`, 'INFO')
-        if (form.hostingType === 'internal') {
-          pushLog(`Engine: ${BASE_MODEL_OPTIONS.find((m) => m.id === form.baseModel)?.name}`, 'INFO')
-        } else {
-          pushLog(`Proxy: ${form.endpointUrl}`, 'INFO')
-        }
-
+        await ApiService.publishAgent(payload);
+        console.log("Agent published successfully")
+        patchLog(reg, { status: 'OK', message: 'Agent saved to MongoDB successfully' })
+        console.log("Agent saved to MongoDB successfully")
+        pushLog(`Agent "${form.name}" is now live!`, 'INFO')
+        console.log("Agent is now live")
         setPhase('success')
-      } catch {
-        patchLog(reg, { status: 'FAIL', message: 'POST /api/agents/publish — request failed' })
-        pushLog('Deployment failed. Please retry.', 'FAIL')
+        console.log("Deployment successful")
+      } catch (err: any) {
+        patchLog(reg, { 
+          status: 'FAIL', 
+            message: `Deployment failed: ${err.message}`
+        })
         setPhase('error')
       }
     },
-    [address, form, pushLog, patchLog],
+    [address, form, pushLog, patchLog]
   )
 
   const isFormValid =
-    form.agentName.trim().length > 0 &&
+    form.name.trim().length > 0 &&
     form.description.trim().length > 0 &&
     form.priceAlgo > 0 &&
     (form.hostingType === 'internal'
       ? form.baseModel.length > 0 && form.systemPrompt.trim().length > 0
       : form.endpointUrl.trim().length > 0)
 
-  // ─── Render ───
+
 
   return (
     <div className="flex flex-col h-screen bg-[#0A0A0A] text-white overflow-hidden">
-      {/* Scan-line overlay */}
       <div className="scan-line-overlay" />
 
-      {/* ─── Header ─── */}
       <header className="flex items-center justify-between px-5 py-3 border-b border-gray-700/60 bg-[#0A0A0A]/95 backdrop-blur-sm z-50">
         <div className="flex items-center gap-3">
           <Link
@@ -338,12 +303,12 @@ export default function Publish() {
             <div className="space-y-1.5">
               <label className="flex items-center justify-between">
                 <span className="text-xs font-mono text-gray-400 uppercase tracking-wider">Agent Name</span>
-                <span className="text-[10px] font-mono text-gray-600">{form.agentName.length}/30</span>
+                <span className="text-[10px] font-mono text-gray-600">{form.name.length}/30</span>
               </label>
               <input
                 type="text"
-                value={form.agentName}
-                onChange={(e) => updateField('agentName', e.target.value.slice(0, 30))}
+                value={form.name}
+                onChange={(e) => updateField('name', e.target.value.slice(0, 30))}
                 placeholder="e.g. Smart Contract Auditor"
                 className="w-full px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none placeholder:text-gray-500 focus:border-terminal-green/50 transition-colors"
               />
@@ -528,7 +493,7 @@ export default function Publish() {
               <div className="border border-gray-700/30 p-3 bg-[#0d0d0d] font-mono text-[11px] space-y-0.5 animate-fade-in">
                 <p className="text-gray-500 mb-1 uppercase tracking-wider text-[10px]">Deploy Preview</p>
                 <p className="text-gray-400">
-                  <span className="text-gray-600">{'>'}</span> name: <span className="text-white">{form.agentName}</span>
+                  <span className="text-gray-600">{'>'}</span> name: <span className="text-white">{form.name}</span>
                 </p>
                 {form.hostingType === 'internal' ? (
                   <p className="text-gray-400">

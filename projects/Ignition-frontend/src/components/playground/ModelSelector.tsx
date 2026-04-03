@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Cpu, Users, ChevronRight, Zap, Key } from 'lucide-react'
 import type { AIModel, ModelCategory } from '../../types/models'
 import { BASE_MODELS, COMMUNITY_AGENTS } from '../../types/models'
+import APIService from '../../utils/APIService'
 
 interface ModelSelectorProps {
   selected: AIModel | null
@@ -11,8 +12,36 @@ interface ModelSelectorProps {
 
 export default function ModelSelector({ selected, onSelect }: ModelSelectorProps) {
   const [tab, setTab] = useState<ModelCategory>('base')
+  const [agents, setAgents] = useState<any[]>(COMMUNITY_AGENTS);
 
-  const models = tab === 'base' ? BASE_MODELS : COMMUNITY_AGENTS
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const data = await getAgents();
+        if (Array.isArray(data)) {
+          setAgents(data);
+        } else if (data?.agents) { 
+          setAgents(data.agents);
+        }
+      } catch (error) {
+        console.error('failed to fetch agents ', error);
+      }
+    };
+
+    fetchAgents();
+  }, []);
+
+  const getAgents = async () => {
+    try{
+      const response = await APIService.getAgents();
+      console.log("agents", response);
+      return response;
+    } catch(error) {
+      console.log('failed to fetch agents ', error);
+    }
+  }
+
+  const models = tab === 'base' ? BASE_MODELS : agents;
 
   return (
     <div className="flex-shrink-0 border-b border-gray-700/50 bg-[#0d0d0d]">
