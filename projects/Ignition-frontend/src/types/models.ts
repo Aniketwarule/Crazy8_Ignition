@@ -36,9 +36,9 @@ export const TREASURY_ADDRESS =
 
 export const BASE_MODELS: AIModel[] = [
   {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
-    description: "Google's multimodal reasoning model",
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
+    description: "Google's fast multimodal model",
     cost: 0.1,
     costMicroAlgos: 100_000,
     destinationType: 'treasury',

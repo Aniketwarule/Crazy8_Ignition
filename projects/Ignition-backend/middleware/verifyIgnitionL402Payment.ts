@@ -3,13 +3,22 @@ import { NextFunction, Request, Response } from 'express';
 
 type IndexerTxn = {
   id?: string;
-  group?: string;
+  group?: string | Uint8Array;
   sender?: string;
-  logs?: string[];
+  logs?: Array<string | Uint8Array>;
+  confirmedRound?: number;
   ['confirmed-round']?: number;
+  txType?: string;
   ['tx-type']?: string;
+  applicationTransaction?: {
+    applicationId?: number;
+  };
   ['application-transaction']?: {
     ['application-id']?: number;
+  };
+  paymentTransaction?: {
+    receiver?: string;
+    amount?: number;
   };
   ['payment-transaction']?: {
     receiver?: string;
@@ -27,20 +36,30 @@ export type VerifiedIgnitionPayment = {
 
 export type L402VerifiedRequest = Request & {
   ignitionPayment?: VerifiedIgnitionPayment;
+  finalizeIgnitionPayment?: (consumed: boolean) => void;
 };
 
 // In-memory replay protection. This satisfies the task requirement for a mock/simple DB check.
 // Replace this with Redis/Mongo in production so replays are blocked across process restarts.
 const usedTxIds = new Set<string>();
+const inFlightTxIds = new Set<string>();
 
 const BASE_MODEL_PRICE_MICROALGOS = 100_000;
 const BASE_MODEL_PRICE_ALGO = 0.1;
 
-const INDEXER_URL = process.env.ALGORAND_INDEXER_URL || 'https://testnet-idx.algonode.cloud';
-const IGNITION_GATEWAY_APP_ID = Number(process.env.IGNITION_GATEWAY_APP_ID || '0');
-const IGNITION_TREASURY_ADDRESS = process.env.IGNITION_TREASURY_ADDRESS || '';
+const DEFAULT_INDEXER_URL = 'https://testnet-idx.algonode.cloud';
 
-const indexer = new algosdk.Indexer('', INDEXER_URL, '');
+const getRuntimeConfig = () => {
+  const indexerUrl = (process.env.ALGORAND_INDEXER_URL || DEFAULT_INDEXER_URL).trim();
+  const gatewayAppId = Number(process.env.IGNITION_GATEWAY_APP_ID || '0');
+  const treasuryAddress = (process.env.IGNITION_TREASURY_ADDRESS || '').trim();
+
+  return {
+    indexerUrl,
+    gatewayAppId,
+    treasuryAddress,
+  };
+};
 
 const getBearerToken = (headerValue?: string): string | null => {
   if (!headerValue) return null;
@@ -49,12 +68,61 @@ const getBearerToken = (headerValue?: string): string | null => {
   return token.length > 0 ? token : null;
 };
 
-const decodeBase64Log = (b64: string): string => {
+const decodeLogEntry = (entry: string | Uint8Array): string => {
+  if (entry instanceof Uint8Array) {
+    return Buffer.from(entry).toString('utf-8');
+  }
+
   try {
-    return Buffer.from(b64, 'base64').toString('utf-8');
+    return Buffer.from(entry, 'base64').toString('utf-8');
   } catch {
     return '';
   }
+};
+
+const getConfirmedRound = (txn: IndexerTxn): number => {
+  return Number(txn.confirmedRound ?? txn['confirmed-round'] ?? 0);
+};
+
+const getTxType = (txn: IndexerTxn): string => {
+  return String(txn.txType ?? txn['tx-type'] ?? '');
+};
+
+const getApplicationId = (txn: IndexerTxn): number => {
+  return Number(txn.applicationTransaction?.applicationId ?? txn['application-transaction']?.['application-id'] ?? 0);
+};
+
+const getPaymentReceiver = (txn: IndexerTxn): string => {
+  return String(txn.paymentTransaction?.receiver ?? txn['payment-transaction']?.receiver ?? '');
+};
+
+const getPaymentAmount = (txn: IndexerTxn): number => {
+  return Number(txn.paymentTransaction?.amount ?? txn['payment-transaction']?.amount ?? 0);
+};
+
+const normalizeGroupId = (group: IndexerTxn['group']): string => {
+  if (!group) return '';
+  if (typeof group === 'string') return group;
+  return Buffer.from(group).toString('base64');
+};
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const withRetry = async <T>(operation: () => Promise<T>, attempts = 6, delayMs = 800): Promise<T> => {
+  let lastError: unknown;
+
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (i < attempts - 1) {
+        await sleep(delayMs);
+      }
+    }
+  }
+
+  throw lastError;
 };
 
 const respondPaymentRequired = (res: Response): void => {
@@ -63,6 +131,11 @@ const respondPaymentRequired = (res: Response): void => {
     requiredAmountAlgo: BASE_MODEL_PRICE_ALGO,
     message: 'Payment required via IgnitionGateway Smart Contract',
   });
+};
+
+const respondUnauthorized = (res: Response, txId: string, reason: string): void => {
+  console.warn(`[L402] Reject txId=${txId}: ${reason}`);
+  res.status(401).json({ error: reason });
 };
 
 // L402 verification middleware.
@@ -78,6 +151,9 @@ export const verifyIgnitionL402Payment = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  const { indexerUrl, gatewayAppId, treasuryAddress } = getRuntimeConfig();
+  const indexer = new algosdk.Indexer('', indexerUrl, '');
+
   // The L402 intercept: missing bearer token means client has not paid yet.
   const txId = getBearerToken(req.headers.authorization);
   if (!txId) {
@@ -86,7 +162,7 @@ export const verifyIgnitionL402Payment = async (
   }
 
   // Validate required server-side configuration.
-  if (!IGNITION_GATEWAY_APP_ID || !IGNITION_TREASURY_ADDRESS) {
+  if (!gatewayAppId || !treasuryAddress) {
     res.status(500).json({
       error: 'Server misconfigured. Set IGNITION_GATEWAY_APP_ID and IGNITION_TREASURY_ADDRESS.',
     });
@@ -99,87 +175,131 @@ export const verifyIgnitionL402Payment = async (
     return;
   }
 
+  // Prevent concurrent re-use while a verified request is being processed.
+  if (inFlightTxIds.has(txId)) {
+    res.status(409).json({ error: 'txId is currently being processed' });
+    return;
+  }
+
   let appCallTxn: IndexerTxn;
+  let confirmedRound = 0;
 
   try {
-    // Fetch the exact transaction by ID from Testnet Indexer.
-    // If this fails, txId is invalid/unreachable and must be rejected.
-    const lookup = await indexer.lookupTransactionByID(txId).do();
+    // Indexer can lag right after confirmation, so allow a short retry window.
+    const lookup = await withRetry(
+      async () => {
+        const result = await indexer.lookupTransactionByID(txId).do();
+        const txn = result?.transaction as IndexerTxn | undefined;
+        if (!txn) {
+          throw new Error('Transaction not indexed yet');
+        }
+        const round = getConfirmedRound(txn);
+        if (round <= 0) {
+          throw new Error('Transaction not confirmed in indexer yet');
+        }
+        return result;
+      },
+      12,
+      1000,
+    );
     appCallTxn = lookup.transaction as IndexerTxn;
+    confirmedRound = getConfirmedRound(appCallTxn);
   } catch (error) {
-    res.status(401).json({ error: 'Invalid txId or indexer lookup failed' });
+    const reason = error instanceof Error ? error.message : 'Invalid txId or indexer lookup failed';
+    if (reason.includes('not confirmed')) {
+      respondUnauthorized(res, txId, 'Transaction is not confirmed');
+      return;
+    }
+
+    respondUnauthorized(res, txId, 'Invalid txId or indexer lookup failed');
     return;
   }
 
   // 1) Transaction must be confirmed. Failed app calls never become confirmed transactions.
-  const confirmedRound = Number(appCallTxn['confirmed-round'] || 0);
   if (confirmedRound <= 0) {
-    res.status(401).json({ error: 'Transaction is not confirmed' });
+    respondUnauthorized(res, txId, 'Transaction is not confirmed');
     return;
   }
 
   // 2) Must be an application call to your payment-verifier contract.
-  if (appCallTxn['tx-type'] !== 'appl') {
-    res.status(401).json({ error: 'txId must reference an application call transaction' });
+  if (getTxType(appCallTxn) !== 'appl') {
+    respondUnauthorized(res, txId, 'txId must reference an application call transaction');
     return;
   }
 
-  const appId = Number(appCallTxn['application-transaction']?.['application-id'] || 0);
-  if (appId !== IGNITION_GATEWAY_APP_ID) {
-    res.status(401).json({ error: 'Application ID mismatch for IgnitionGateway' });
+  const appId = getApplicationId(appCallTxn);
+  if (appId !== gatewayAppId) {
+    respondUnauthorized(res, txId, 'Application ID mismatch for IgnitionGateway');
     return;
   }
 
   // Optional but strong signal: your contract logs PAID_BASE_MODEL on successful verification.
   const logs = appCallTxn.logs || [];
-  const containsSuccessLog = logs.some((entry) => decodeBase64Log(entry) === 'PAID_BASE_MODEL');
+  const containsSuccessLog = logs.some((entry) => decodeLogEntry(entry).includes('PAID_BASE_MODEL'));
   if (!containsSuccessLog) {
-    res.status(401).json({ error: 'Missing expected IgnitionGateway success log' });
-    return;
+    console.warn(`[L402] txId=${txId}: Missing expected IgnitionGateway success log (continuing)`);
   }
 
   // 3) Payment guarantee comes from atomic group inspection:
   //    We locate every tx in the same group, then find at least one payment tx
   //    that pays treasury >= required base model price.
-  const groupId = appCallTxn.group;
+  const groupId = normalizeGroupId(appCallTxn.group);
   if (!groupId) {
-    res.status(401).json({ error: 'Expected grouped transaction but group ID is missing' });
+    respondUnauthorized(res, txId, 'Expected grouped transaction but group ID is missing');
     return;
   }
 
   let groupTxns: IndexerTxn[] = [];
   try {
-    const groupLookup = await indexer.searchForTransactions().groupid(groupId).do();
+    const groupLookup = await withRetry(
+      async () => {
+        const result = await indexer.searchForTransactions().groupid(groupId).do();
+        const txns = (result.transactions || []) as IndexerTxn[];
+        if (txns.length === 0) {
+          throw new Error('Grouped transactions not indexed yet');
+        }
+        return result;
+      },
+      6,
+      900,
+    );
     groupTxns = (groupLookup.transactions || []) as IndexerTxn[];
   } catch {
-    res.status(401).json({ error: 'Failed to load grouped transactions for verification' });
+    respondUnauthorized(res, txId, 'Failed to load grouped transactions for verification');
     return;
   }
 
   const qualifyingPayment = groupTxns.find((txn) => {
-    if (txn['tx-type'] !== 'pay') return false;
-    if (Number(txn['confirmed-round'] || 0) <= 0) return false;
-    const receiver = txn['payment-transaction']?.receiver;
-    const amount = Number(txn['payment-transaction']?.amount || 0);
-    return receiver === IGNITION_TREASURY_ADDRESS && amount >= BASE_MODEL_PRICE_MICROALGOS;
+    if (getTxType(txn) !== 'pay') return false;
+    if (getConfirmedRound(txn) <= 0) return false;
+    const receiver = getPaymentReceiver(txn);
+    const amount = getPaymentAmount(txn);
+    return receiver === treasuryAddress && amount >= BASE_MODEL_PRICE_MICROALGOS;
   });
 
   if (!qualifyingPayment) {
-    res.status(401).json({
-      error: 'No qualifying treasury payment found in transaction group',
-    });
+    respondUnauthorized(res, txId, 'No qualifying treasury payment found in transaction group');
     return;
   }
 
-  // Finalize replay protection only after full on-chain verification succeeds.
-  usedTxIds.add(txId);
+  // Lock txId while downstream route executes; consume only on successful completion.
+  inFlightTxIds.add(txId);
 
-  (req as L402VerifiedRequest).ignitionPayment = {
+  const verifiedRequest = req as L402VerifiedRequest;
+
+  verifiedRequest.ignitionPayment = {
     txId,
     groupId,
     payer: qualifyingPayment.sender || 'unknown',
-    amountMicroAlgos: Number(qualifyingPayment['payment-transaction']?.amount || 0),
+    amountMicroAlgos: getPaymentAmount(qualifyingPayment),
     confirmedRound,
+  };
+
+  verifiedRequest.finalizeIgnitionPayment = (consumed: boolean) => {
+    inFlightTxIds.delete(txId);
+    if (consumed) {
+      usedTxIds.add(txId);
+    }
   };
 
   next();

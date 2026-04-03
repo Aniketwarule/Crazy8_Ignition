@@ -2,10 +2,14 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import dns from 'node:dns';
+import { generateRoute } from './controllers/generate';
 import { generateApiKey, hitApiKey, getApiKeyStats } from './routes/apikeys';
+import agentRoutes from './routes/agent.routes';
 import baseModelsRouter from './routes/baseModels';
 
 dotenv.config();
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -28,7 +32,12 @@ app.use('/api', agentRoutes);
 const startServer = async () => {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/ignition';
-    await mongoose.connect(mongoUri).then(() => console.log('Connected to db')).catch((error) => console.log(error));
+    try {
+      await mongoose.connect(mongoUri);
+      console.log(`[Init] Connected to MongoDB: ${mongoUri}`);
+    } catch (error) {
+      console.warn(`[Init] MongoDB unavailable at ${mongoUri}; continuing without DB-backed features.`);
+    }
 
     app.listen(PORT, () => {
       console.log(`Server started on http://localhost:${PORT}`);

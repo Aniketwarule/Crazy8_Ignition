@@ -6,7 +6,7 @@
     },
     "vibekit-mcp": {
       "type": "stdio",
-      "command": "/home/ghost/.local/bin/vibekit",
+      "command": "C:\\Users\\Anike\\.vibekit\\bin\\vibekit.exe",
       "args": [
         "mcp"
       ],

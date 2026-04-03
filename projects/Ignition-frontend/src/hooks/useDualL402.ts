@@ -15,6 +15,8 @@ const API_URL =
 const IGNITION_GATEWAY_APP_ID = Number(import.meta.env.VITE_IGNITION_GATEWAY_APP_ID || '0')
 let _counter = 0
 
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
 function log(
   message: string,
   status: TerminalLogEntry['status'],
@@ -133,7 +135,12 @@ export function useDualL402(selectedModel: AIModel | null) {
         return
       }
 
-      const modelForBackend = selectedModel.id.startsWith('gemini') ? selectedModel.id : 'gemini-1.5-pro'
+      const legacyModelMap: Record<string, string> = {
+        'gemini-1.5-pro': 'gemini-2.0-flash',
+      }
+      const modelForBackend = selectedModel.id.startsWith('gemini')
+        ? (legacyModelMap[selectedModel.id] || selectedModel.id)
+        : 'gemini-2.0-flash'
       if (modelForBackend !== selectedModel.id) {
         push(`INFO: Backend currently supports Gemini. Using ${modelForBackend}.`, 'INFO')
       }
@@ -261,24 +268,70 @@ export function useDualL402(selectedModel: AIModel | null) {
         const retryId = push('Retrying with payment proof...', 'PENDING')
 
         let retry: Response
-        try {
-          retry = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${txId}`,
-            },
-            body: JSON.stringify({ prompt, model: modelForBackend }),
-          })
-        } catch {
+        let retryReason = ''
+        let fetchFailed = false
+
+        for (let attempt = 1; attempt <= 4; attempt += 1) {
+          try {
+            retry = await fetch(API_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${txId}`,
+              },
+              body: JSON.stringify({ prompt, model: modelForBackend }),
+            })
+          } catch {
+            fetchFailed = true
+            break
+          }
+
+          if (retry.ok) {
+            break
+          }
+
+          let reason = ''
+          try {
+            const text = await retry.text()
+            if (text) {
+              try {
+                const parsed = JSON.parse(text)
+                reason = parsed.error || parsed.message || text
+              } catch {
+                reason = text
+              }
+            }
+          } catch {
+            // ignore parse failures
+          }
+
+          retryReason = reason || `HTTP ${retry.status}`
+
+          // Indexer can lag right after on-chain confirmation.
+          if (retry.status === 401 && retryReason.toLowerCase().includes('not confirmed') && attempt < 4) {
+            patch(retryId, {
+              status: 'PENDING',
+              message: `Retry attempt ${attempt}/4 — waiting for indexer confirmation...`,
+            })
+            await delay(1500)
+            continue
+          }
+
+          break
+        }
+
+        if (fetchFailed || !retry!) {
           patch(retryId, { status: 'FAIL', message: 'Retry failed — network error' })
           setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: 'Retry failed' }))
           return
         }
 
         if (!retry.ok) {
-          patch(retryId, { status: 'FAIL', message: `Retry — HTTP ${retry.status}` })
-          setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: 'Verification failed' }))
+          const reason = retryReason || 'Verification failed'
+
+          patch(retryId, { status: 'FAIL', message: `Retry — HTTP ${retry.status}: ${reason}` })
+          push(`Backend verification failed: ${reason}`, 'FAIL')
+          setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: reason }))
           return
         }
 
