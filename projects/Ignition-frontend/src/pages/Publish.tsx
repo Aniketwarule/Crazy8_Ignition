@@ -95,7 +95,9 @@ export default function Publish() {
   const handleDeploy = useCallback(
     async (e: FormEvent) => {
       e.preventDefault()
-      if (!address || !form.name) return
+      if (!address || !form.name) return;
+      if (form.hostingType === 'internal' && (!form.baseModel || !form.systemPrompt)) return;
+      if (form.hostingType === 'external' && !form.endpointUrl) return;
 
       setPhase('deploying')
       setLogs([])
