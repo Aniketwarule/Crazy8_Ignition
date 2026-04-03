@@ -1,21 +1,24 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAgent extends Document {
+  agentId: string;
   name: string;
   description: string;
-  price: number;
+  priceAlgo: number;
   creatorWallet: string;
   hostingType: 'internal' | 'external';
-  baseModel?: string;      // required if internal
-  systemPrompt?: string;   // required if internal
-  endpointUrl?: string;    // required if external
+  baseModel?: string;      
+  systemPrompt?: string;   
+  endpointUrl?: string;
+  APIkey?: string;
 }
 
 const AgentSchema: Schema = new Schema({
-  name: { type: String, required: true },
+  agentId: { type: String, unique: true },
+  name: { type: String, required: true, index: true },
   description: { type: String, required: true },
-  price: { type: Number, required: true },
-  creatorWallet: { type: String, required: true },
+  priceAlgo: { type: Number, required: true },
+  creatorWallet: { type: String, required: true, index: true },
   hostingType: { type: String, enum: ['internal', 'external'], required: true },
   baseModel: { 
     type: String, 
@@ -27,8 +30,25 @@ const AgentSchema: Schema = new Schema({
   },
   endpointUrl: { 
     type: String, 
+    validate: {
+        validator: function(v: string) {
+        return /^https?:\/\/.+/.test(v);
+      },
+      message: "Invalid URL"
+    },
     required: function(this: any) { return this.hostingType === 'external'; } 
+  },
+  APIkey: { 
+    type: String, 
+    required: function(this: any) { return this.hostingType === 'internal'; } 
   }
 }, { timestamps: true });
 
-export default mongoose.models.Agent || mongoose.model<IAgent>('Agent', AgentSchema);
+AgentSchema.pre('save', function(this: any, next: any) {
+  if (!this.agentId) {
+    this.agentId = 'agent_' + Math.random().toString(36).substring(2, 9);
+  }
+});
+
+
+export default mongoose.models.Agent || mongoose.model<IAgent>('Agent', AgentSchema); 
