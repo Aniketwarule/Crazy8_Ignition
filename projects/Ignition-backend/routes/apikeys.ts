@@ -1,18 +1,19 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { OpenAI } from 'openai';
+import { GoogleGenAI } from '@google/genai';
 import ApiKeyModel from '../models/ApiKey';
 import UsageLog from '../models/UsageLog';
 
 // ─────────────────────────────────────────────────────────────
-// HuggingFace Model Mapping
-// Maps our internal model IDs → HuggingFace router model slugs
+// Google GenAI Model Mapping
+// Maps our internal model IDs → Google's model names
 // ─────────────────────────────────────────────────────────────
 
-const HF_MODEL_MAP: Record<string, string> = {
-  'gemini-1.5-pro':  'openai/gpt-oss-120b:groq',
-  'gpt-4o':          'openai/gpt-oss-120b:groq',
-  'claude-3-opus':   'openai/gpt-oss-120b:groq',
+const MODEL_MAP: Record<string, string> = {
+  'gemini-1.5-pro': 'gemini-3-flash-preview',
+  'gpt-4o': 'gemini-3-flash-preview',
+  'claude-3-opus': 'gemini-3-flash-preview',
+  'deepseek-v2-lite': 'gemini-3-flash-preview',
 };
 
 // Pricing in ALGO per 1000 tokens
@@ -20,25 +21,23 @@ const TOKEN_PRICE_MAP: Record<string, number> = {
   'gemini-1.5-pro': 0.01,
   'gpt-4o': 0.05,
   'claude-3-opus': 0.08,
+  'deepseek-v2-lite': 0.01,
 };
 
 // ─────────────────────────────────────────────────────────────
-// Lazy-init the OpenAI client (HuggingFace Router)
+// Lazy-init the Google GenAI client
 // ─────────────────────────────────────────────────────────────
 
-let _hfClient: OpenAI | null = null;
-function getHFClient(): OpenAI {
-  if (!_hfClient) {
-    const token = process.env.HF_TOKEN;
+let _aiClient: GoogleGenAI | null = null;
+function getAIClient(): GoogleGenAI {
+  if (!_aiClient) {
+    const token = process.env.GEMINI_API_KEY;
     if (!token) {
-      throw new Error('HF_TOKEN is not set in environment variables');
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
     }
-    _hfClient = new OpenAI({
-      baseURL: 'https://router.huggingface.co/v1',
-      apiKey: token,
-    });
+    _aiClient = new GoogleGenAI({ apiKey: token });
   }
-  return _hfClient;
+  return _aiClient;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -55,8 +54,8 @@ export const generateApiKey = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const hfModel = HF_MODEL_MAP[modelId];
-    if (!hfModel) {
+    const upstreamModel = MODEL_MAP[modelId];
+    if (!upstreamModel) {
       res.status(400).json({ error: `Model "${modelId}" is not supported for API key generation` });
       return;
     }
@@ -68,7 +67,7 @@ export const generateApiKey = async (req: Request, res: Response): Promise<void>
     const record = await ApiKeyModel.create({
       key: apiKey,
       modelId,
-      hfModel,
+      upstreamModel,
       walletAddress,
       hits: 0,
       totalTokens: 0,
@@ -76,7 +75,7 @@ export const generateApiKey = async (req: Request, res: Response): Promise<void>
       isActive: true,
     });
 
-    console.log(`[ApiKey] Generated key for wallet=${walletAddress} model=${modelId} → hf=${hfModel}`);
+    console.log(`[ApiKey] Generated key for wallet=${walletAddress} model=${modelId} → engine=${upstreamModel}`);
 
     res.status(201).json({
       apiKey: record.key,
@@ -126,43 +125,48 @@ export const chatCompletion = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Use the model tied to the key (ignore client-supplied model override)
-    const hfModel = record.hfModel;
+    // Use the model tied to the key (live mapping priority)
+    const upstreamModel = MODEL_MAP[record.modelId] || record.upstreamModel;
     const promptSnippet = messages[messages.length - 1]?.content?.substring(0, 200) || '';
 
-    console.log(`[Chat] key=${apiKey.substring(0, 16)}... model=${hfModel} prompt="${promptSnippet.substring(0, 60)}..."`);
+    // Convert OpenAI-style messages to Google GenAI contents
+    const contents = messages.map((m: any) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
 
-    // ── Call HuggingFace ──
-    const client = getHFClient();
-    const chatResponse = await client.chat.completions.create({
-      model: hfModel,
-      messages: messages,
+    console.log(`[Chat] key=${apiKey.substring(0, 16)}... model_id=${record.modelId} engine_model=${upstreamModel}`);
+
+    // ── Call Google GenAI ──
+    const ai = getAIClient();
+    const result = await ai.models.generateContent({
+      model: upstreamModel,
+      contents,
     });
 
     const latencyMs = Date.now() - startTime;
-    const choice = chatResponse.choices?.[0];
-    const responseContent = choice?.message?.content || '';
-    const usage = chatResponse.usage;
+    const responseContent = result.text || '';
+    const usage = result.usageMetadata;
 
     // ── Billing Calculation ──
-    const totalTokens = usage?.total_tokens || 0;
-    const tokenPrice = TOKEN_PRICE_MAP[record.modelId] || 0.01; 
+    const totalTokens = usage?.totalTokenCount || 0;
+    const tokenPrice = TOKEN_PRICE_MAP[record.modelId] || 0.01;
     const cost = (totalTokens / 1000) * tokenPrice;
 
     // ── Update counters ──
-    record.hits += 1;
-    record.totalTokens += totalTokens;
-    record.accruedAlgo += cost;
-    await record.save();
+    await ApiKeyModel.updateOne(
+      { _id: record._id },
+      { $inc: { hits: 1, totalTokens: totalTokens, accruedAlgo: cost } }
+    );
 
     // ── Trace usage to MongoDB ──
     await UsageLog.create({
       apiKey: apiKey.substring(0, 16) + '***',
       modelId: record.modelId,
-      hfModel,
+      upstreamModel,
       walletAddress: record.walletAddress,
-      promptTokens: usage?.prompt_tokens || 0,
-      completionTokens: usage?.completion_tokens || 0,
+      promptTokens: usage?.promptTokenCount || 0,
+      completionTokens: usage?.candidatesTokenCount || 0,
       totalTokens: totalTokens,
       promptSnippet: promptSnippet.substring(0, 200),
       responseSnippet: responseContent.substring(0, 200),
@@ -170,16 +174,21 @@ export const chatCompletion = async (req: Request, res: Response): Promise<void>
       status: 'success',
     });
 
-    console.log(`[Chat] ✓ hit #${record.hits} | ${totalTokens} tokens | cost=${cost.toFixed(6)} ALGO | ${latencyMs}ms`);
-
-    // ── Return OpenAI-compatible response ──
-    res.status(200).json({
-      id: chatResponse.id,
+    res.json({
+      id: `genai-${crypto.randomUUID()}`,
       object: 'chat.completion',
-      created: chatResponse.created,
+      created: Math.floor(Date.now() / 1000),
       model: record.modelId,
-      choices: chatResponse.choices,
-      usage: chatResponse.usage,
+      choices: [{
+        index: 0,
+        message: { role: 'assistant', content: responseContent },
+        finish_reason: 'stop'
+      }],
+      usage: {
+        prompt_tokens: usage?.promptTokenCount || 0,
+        completion_tokens: usage?.candidatesTokenCount || 0,
+        total_tokens: totalTokens
+      }
     });
 
   } catch (error: any) {
@@ -196,7 +205,7 @@ export const chatCompletion = async (req: Request, res: Response): Promise<void>
           await UsageLog.create({
             apiKey: apiKey.substring(0, 16) + '***',
             modelId: record.modelId,
-            hfModel: record.hfModel,
+            upstreamModel: record.upstreamModel,
             walletAddress: record.walletAddress,
             promptSnippet: '',
             responseSnippet: '',
@@ -206,7 +215,7 @@ export const chatCompletion = async (req: Request, res: Response): Promise<void>
           });
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (error?.status === 429) {
       res.status(429).json({ error: 'Rate limited by upstream model provider. Try again shortly.' });
