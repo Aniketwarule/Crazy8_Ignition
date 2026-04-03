@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Cpu, Users, ChevronRight, Zap } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Cpu, Users, ChevronRight, Zap, Key } from 'lucide-react'
 import type { AIModel, ModelCategory } from '../../types/models'
 import { BASE_MODELS, COMMUNITY_AGENTS } from '../../types/models'
 
@@ -39,6 +40,14 @@ export default function ModelSelector({ selected, onSelect }: ModelSelectorProps
           <Users className="w-3 h-3" />
           Community Agents
         </button>
+
+        <Link
+          to="/api-key"
+          className="flex items-center gap-1.5 px-4 py-2 text-xs font-mono uppercase tracking-wider transition-all duration-150 border-b-2 text-gray-500 border-transparent hover:text-terminal-green"
+        >
+          <Key className="w-3 h-3" />
+          API Keys
+        </Link>
 
         {/* Selected model indicator */}
         {selected && (

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Zap, Radio, LogOut, Wallet, Loader2, Rocket } from 'lucide-react'
+import { Zap, Radio, LogOut, Wallet, Loader2, Rocket, Key } from 'lucide-react'
 import { usePeraWallet } from '../../hooks/usePeraWallet'
 import { ellipseAddress } from '../../utils/ellipseAddress'
 
@@ -26,6 +26,13 @@ export default function Header() {
         >
           <Rocket className="w-3 h-3" />
           /publish
+        </Link>
+        <Link
+          to="/api-key"
+          className="hidden sm:flex items-center gap-1 text-gray-500 hover:text-terminal-green text-xs font-mono transition-colors"
+        >
+          <Key className="w-3 h-3" />
+          /api-key
         </Link>
       </div>
 

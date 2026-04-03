@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Lock,
   Cpu,
+  Key,
 } from 'lucide-react'
 import { usePeraWallet } from '../hooks/usePeraWallet'
 import { ellipseAddress } from '../utils/ellipseAddress'
@@ -186,6 +187,14 @@ export default function Publish() {
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Playground
+          </Link>
+          <span className="text-gray-700">/</span>
+          <Link
+            to="/api-key"
+            className="flex items-center gap-1.5 text-gray-500 hover:text-terminal-green transition-colors text-xs font-mono uppercase tracking-wider"
+          >
+            <Key className="w-3.5 h-3.5" />
+            API Access
           </Link>
           <span className="text-gray-700">/</span>
           <div className="flex items-center gap-2">
