@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react'
+import { CheckCircle2, AlertCircle, Clock, Info } from 'lucide-react'
 import type { TerminalLogEntry } from '../../types/l402'
 
 interface TerminalLineProps {
   entry: TerminalLogEntry
 }
 
-function StatusBadge({ status }: { status: TerminalLogEntry['status'] }) {
+function StatusIcon({ status }: { status: TerminalLogEntry['status'] }) {
   switch (status) {
     case 'OK':
-      return <span className="badge-ok ml-2">[OK]</span>
+      return <CheckCircle2 className="w-3.5 h-3.5 text-accent-green flex-shrink-0" />
     case 'PENDING':
-      return <span className="badge-pending ml-2">[PENDING]</span>
+      return <Clock className="w-3.5 h-3.5 text-accent-orange animate-pulse-slow flex-shrink-0" />
     case 'FAIL':
-      return <span className="badge-fail ml-2">[FAIL]</span>
+      return <AlertCircle className="w-3.5 h-3.5 text-accent-red flex-shrink-0" />
     case 'INFO':
-      return <span className="badge-info ml-2">[INFO]</span>
+      return <Info className="w-3.5 h-3.5 text-content-secondary dark:text-content-dark-secondary flex-shrink-0" />
     case 'INPUT':
     case 'STREAM':
       return null
@@ -31,49 +32,42 @@ export default function TerminalLine({ entry }: TerminalLineProps) {
     return () => clearTimeout(t)
   }, [])
 
-  const prefix = entry.prefix || '>'
   const isInput = entry.status === 'INPUT'
   const isStream = entry.status === 'STREAM'
   const isAi = entry.isAiResponse
+  const isSystem = !isInput && !isStream && !isAi
 
   return (
     <div
-      className={`flex items-start gap-2 py-0.5 px-1 font-mono text-[13px] leading-relaxed transition-all duration-200 ${
+      className={`transition-all duration-200 ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
-      } ${isAi ? 'pl-4 border-l border-terminal-green/15' : ''}`}
+      }`}
     >
-      {/* Prefix */}
-      <span
-        className={`flex-shrink-0 select-none ${
-          isInput
-            ? 'text-terminal-green text-shadow-green'
-            : isStream
-              ? 'text-terminal-teal'
-              : 'text-gray-500'
-        }`}
-      >
-        {prefix}
-      </span>
-
-      {/* Message */}
-      <span
-        className={`flex-1 break-all whitespace-pre-wrap ${
-          isInput
-            ? 'text-white font-medium'
-            : isAi
-              ? 'text-white/90'
-              : entry.status === 'FAIL'
-                ? 'text-red-400/90'
-                : entry.status === 'INFO'
-                  ? 'text-gray-400'
-                  : 'text-gray-400'
-        }`}
-      >
-        {entry.message}
-      </span>
-
-      {/* Status badge */}
-      <StatusBadge status={entry.status} />
+      {isInput ? (
+        /* User message — right-aligned bubble */
+        <div className="flex justify-end">
+          <div className="msg-user">
+            {entry.message}
+          </div>
+        </div>
+      ) : isAi || isStream ? (
+        /* AI response — left-aligned */
+        <div className="flex justify-start">
+          <div className="msg-ai whitespace-pre-wrap">
+            {entry.message}
+          </div>
+        </div>
+      ) : (
+        /* System/status message — centered */
+        <div className="flex items-center justify-center gap-1.5">
+          <StatusIcon status={entry.status} />
+          <span className={`msg-system ${
+            entry.status === 'FAIL' ? 'text-accent-red' : ''
+          }`}>
+            {entry.message}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

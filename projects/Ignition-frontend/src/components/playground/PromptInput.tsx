@@ -1,5 +1,5 @@
 import { useState, useCallback, type FormEvent, type KeyboardEvent } from 'react'
-import { ArrowUp, Loader2, Zap } from 'lucide-react'
+import { ArrowUp, Loader2, Plus } from 'lucide-react'
 import type { AIModel } from '../../types/models'
 
 interface PromptInputProps {
@@ -36,75 +36,75 @@ export default function PromptInput({ onSubmit, isProcessing, isWalletConnected,
   const canSubmit = prompt.trim().length > 0 && !isProcessing && isWalletConnected && !!selectedModel
 
   const placeholder = !isWalletConnected
-    ? 'connect Pera Wallet to begin...'
+    ? 'Connect wallet to begin...'
     : !selectedModel
-      ? 'select a model above...'
+      ? 'Select a model to start...'
       : isProcessing
-        ? 'processing...'
-        : `prompt ${selectedModel.name} (${selectedModel.cost} ALGO)...`
+        ? 'Processing...'
+        : 'Ask anything...'
 
   return (
-    <div className="flex-shrink-0 border-t border-gray-700/60 bg-terminal-bg">
-      {/* Cost indicator */}
-      {selectedModel && isWalletConnected && (
-        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-gray-700/20 bg-[#0d0d0d]">
-          <Zap className="w-3 h-3 text-terminal-green" />
-          <span className="text-[10px] font-mono text-gray-500">
-            {selectedModel.destinationType === 'treasury' ? 'PREMIUM' : 'CREATOR'}
-          </span>
-          <span className="text-[10px] font-mono text-gray-400">
+    <div className="flex-shrink-0 px-4 pb-4 pt-2 relative">
+      {/* ─── Floating model label ─── */}
+      {selectedModel && (
+        <div className="flex justify-center mb-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-surface-secondary dark:bg-surface-dark-tertiary text-content-secondary dark:text-content-dark-secondary border border-border dark:border-border-dark">
             {selectedModel.name}
-          </span>
-          <span className="text-[10px] font-mono text-terminal-green font-bold ml-auto">
-            {selectedModel.cost} ALGO/req
+            <span className="text-[10px] opacity-60">·</span>
+            <span className="text-[10px] opacity-60">{selectedModel.cost} ALGO</span>
           </span>
         </div>
       )}
 
-      {/* Input area */}
-      <form onSubmit={handleSubmit} className="flex items-end gap-3 px-4 py-3">
-        {/* Terminal prefix */}
-        <span className="text-green-500 font-mono text-sm font-bold pb-1.5 select-none text-shadow-green">
-          $
-        </span>
+      {/* ─── Prompt bar ─── */}
+      <form onSubmit={handleSubmit} className="prompt-bar">
+        <div className="flex items-end gap-3 px-4 py-3">
+          {/* Plus button */}
+          <button
+            type="button"
+            className="flex-shrink-0 w-8 h-8 rounded-lg bg-surface-secondary dark:bg-surface-dark-tertiary flex items-center justify-center text-gray-400 hover:text-content dark:hover:text-content-dark hover:bg-surface-tertiary dark:hover:bg-surface-dark-secondary transition-all"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
 
-        {/* Textarea */}
-        <div className="flex-1">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={!isWalletConnected || isProcessing || !selectedModel}
-            rows={1}
-            className="w-full bg-transparent text-white font-mono text-sm resize-none outline-none placeholder:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed leading-relaxed py-1"
-            style={{ minHeight: '28px', maxHeight: '120px' }}
-            onInput={(e) => {
-              const el = e.target as HTMLTextAreaElement
-              el.style.height = '28px'
-              el.style.height = Math.min(el.scrollHeight, 120) + 'px'
-            }}
-          />
+          {/* Textarea */}
+          <div className="flex-1">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={!isWalletConnected || isProcessing || !selectedModel}
+              rows={1}
+              className="w-full bg-transparent text-content dark:text-content-dark text-sm resize-none outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed leading-relaxed py-1"
+              style={{ minHeight: '28px', maxHeight: '120px' }}
+              onInput={(e) => {
+                const el = e.target as HTMLTextAreaElement
+                el.style.height = '28px'
+                el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+              }}
+            />
+          </div>
+
+          {/* Send button */}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="flex-shrink-0 w-8 h-8 rounded-full bg-[#1a1a1a] dark:bg-white flex items-center justify-center text-white dark:text-[#1a1a1a] disabled:opacity-20 disabled:cursor-not-allowed hover:opacity-80 active:scale-95 transition-all"
+          >
+            {isProcessing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowUp className="w-4 h-4" />
+            )}
+          </button>
         </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="flex-shrink-0 flex items-center justify-center w-8 h-8 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/10 hover:border-terminal-green disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-150"
-        >
-          {isProcessing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <ArrowUp className="w-4 h-4" />
-          )}
-        </button>
       </form>
 
       {/* Keyboard hint */}
-      <div className="flex items-center justify-end px-4 pb-2">
-        <span className="text-[9px] font-mono text-gray-500/40 tracking-wider">
-          ENTER to send · SHIFT+ENTER for newline
+      <div className="flex items-center justify-center mt-2">
+        <span className="text-[10px] text-gray-400 dark:text-gray-500">
+          Enter to send · Shift+Enter for newline
         </span>
       </div>
     </div>

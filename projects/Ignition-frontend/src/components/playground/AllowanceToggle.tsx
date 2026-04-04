@@ -12,7 +12,6 @@ export default function AllowanceToggle() {
 
   const handleToggle = useCallback(async () => {
     if (allowance.enabled) {
-      // Disable auto-pay
       setAllowance((prev) => ({
         ...prev,
         enabled: false,
@@ -21,26 +20,11 @@ export default function AllowanceToggle() {
       return
     }
 
-    // ─── Placeholder: LogicSig signing would go here ───
-    // In production, this would:
-    // 1. Compile TEAL LogicSig contract with parameters (max 10 ALGO, sender, receiver)
-    // 2. Sign the LogicSig with the user's wallet
-    // 3. Store the delegated LogicSig for automatic future transactions
-    // 4. Set the escrow address
-
-    // TODO: Implement TEAL LogicSig contract compilation and signing
-    // const logicSig = await compileAndSignLogicSig({
-    //   maxAmount: 10_000_000, // 10 ALGO in microAlgos
-    //   senderAddress: activeAddress,
-    //   receiverAddress: creatorAddress, // set per-creator or wildcard
-    //   expirationRound: currentRound + 100_000,
-    // })
-
     setAllowance((prev) => ({
       ...prev,
       enabled: true,
       remainingMicroAlgos: 10_000_000,
-      logicSigAddress: null, // Would be set after LogicSig compilation
+      logicSigAddress: null,
     }))
 
     console.log('[Ignition] Auto-pay enabled — LogicSig placeholder. TEAL contract not yet implemented.')
@@ -50,25 +34,35 @@ export default function AllowanceToggle() {
   const percentage = (allowance.remainingMicroAlgos / allowance.totalMicroAlgos) * 100
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b border-terminal-border bg-terminal-surface/20">
+    <div className="flex items-center justify-between px-4 py-2.5 border-b border-border dark:border-border-dark">
       <div className="flex items-center gap-3">
         {/* Toggle */}
         <button
           onClick={handleToggle}
-          className={`toggle-brutal ${allowance.enabled ? 'active' : ''}`}
+          className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${
+            allowance.enabled
+              ? 'bg-accent-green'
+              : 'bg-gray-300 dark:bg-gray-600'
+          }`}
           aria-label="Toggle auto-pay"
         >
-          <div className="toggle-knob" />
+          <div
+            className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200 ${
+              allowance.enabled ? 'left-[calc(100%-18px)]' : 'left-0.5'
+            }`}
+          />
         </button>
 
         {/* Label */}
         <div className="flex items-center gap-1.5">
           {allowance.enabled ? (
-            <ShieldCheck className="w-3.5 h-3.5 text-terminal-green" />
+            <ShieldCheck className="w-3.5 h-3.5 text-accent-green" />
           ) : (
-            <Shield className="w-3.5 h-3.5 text-terminal-dim" />
+            <Shield className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
           )}
-          <span className={`text-xs font-mono ${allowance.enabled ? 'text-terminal-green' : 'text-terminal-dim'}`}>
+          <span className={`text-xs font-medium ${
+            allowance.enabled ? 'text-accent-green' : 'text-gray-400 dark:text-gray-500'
+          }`}>
             Auto-Pay
           </span>
         </div>
@@ -77,15 +71,14 @@ export default function AllowanceToggle() {
       {/* Allowance indicator */}
       {allowance.enabled && (
         <div className="flex items-center gap-3">
-          {/* Mini progress bar */}
-          <div className="w-16 h-1 bg-terminal-border overflow-hidden">
+          <div className="w-16 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-terminal-green transition-all duration-500"
+              className="h-full bg-accent-green rounded-full transition-all duration-500"
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <span className="text-[10px] font-mono text-terminal-green/70 tracking-wider">
-            [{remainingAlgos} ALGO]
+          <span className="text-[10px] font-medium text-accent-green">
+            {remainingAlgos} ALGO
           </span>
         </div>
       )}

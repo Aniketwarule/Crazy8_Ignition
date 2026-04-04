@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import {
   Zap,
   ArrowLeft,
-  Terminal,
   Shield,
   Rocket,
   Loader2,
@@ -14,9 +13,10 @@ import {
   Cpu,
   Key,
 } from 'lucide-react'
+import Header from '../components/playground/Header'
 import { usePeraWallet } from '../hooks/usePeraWallet'
 import { ellipseAddress } from '../utils/ellipseAddress'
-import ApiService from '../utils/apiservice'
+import ApiService from '../utils/APIService'
 
 interface AgentFormState {
   name: string
@@ -57,13 +57,13 @@ const INITIAL_FORM: AgentFormState = {
 function StatusBadge({ status }: { status: DeployLog['status'] }) {
   switch (status) {
     case 'OK':
-      return <span className="text-green-500 font-bold ml-2">[OK]</span>
+      return <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-green/10 text-accent-green">Done</span>
     case 'PENDING':
-      return <span className="text-yellow-400 font-bold ml-2 animate-pulse">[PENDING]</span>
+      return <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-orange/10 text-accent-orange animate-pulse-slow">Pending</span>
     case 'FAIL':
-      return <span className="text-red-400 font-bold ml-2">[FAIL]</span>
+      return <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-red/10 text-accent-red">Failed</span>
     case 'INFO':
-      return <span className="text-cyan-400 font-bold ml-2">[INFO]</span>
+      return <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent-purple/10 text-accent-purple">Info</span>
   }
 }
 
@@ -111,7 +111,7 @@ export default function Publish() {
       await sleep(400)
       patchLog(v, { status: 'OK', message: 'Configuration valid' })
       const reg = pushLog(`POST /api/agents/create — pushing to registry...`, 'PENDING')
-
+    
       try {
         await ApiService.publishAgent(payload);
         console.log("Agent published successfully")
@@ -122,8 +122,8 @@ export default function Publish() {
         setPhase('success')
         console.log("Deployment successful")
       } catch (err: any) {
-        patchLog(reg, {
-          status: 'FAIL',
+        patchLog(reg, { 
+          status: 'FAIL', 
             message: `Deployment failed: ${err.message}`
         })
         setPhase('error')
@@ -143,72 +143,27 @@ export default function Publish() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-[#0A0A0A] text-white overflow-hidden">
-      <div className="scan-line-overlay" />
+    <div className="min-h-screen bg-surface dark:bg-surface-dark transition-colors">
+      <Header />
 
-      <header className="flex items-center justify-between px-5 py-3 border-b border-gray-700/60 bg-[#0A0A0A]/95 backdrop-blur-sm z-50">
-        <div className="flex items-center gap-3">
-          <Link
-            to="/"
-            className="flex items-center gap-1.5 text-gray-500 hover:text-terminal-green transition-colors text-xs font-mono uppercase tracking-wider"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Playground
-          </Link>
-          <span className="text-gray-700">/</span>
-          <Link
-            to="/api-key"
-            className="flex items-center gap-1.5 text-gray-500 hover:text-terminal-green transition-colors text-xs font-mono uppercase tracking-wider"
-          >
-            <Key className="w-3.5 h-3.5" />
-            API Access
-          </Link>
-          <span className="text-gray-700">/</span>
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-terminal-green" strokeWidth={2.5} />
-            <h1 className="font-sans font-bold text-sm tracking-[0.15em] text-white uppercase">
-              Creator Portal
-            </h1>
-          </div>
-        </div>
-
-        {isConnected && address && (
-          <div className="flex items-center gap-2 px-3 py-1.5 border border-terminal-green/20 bg-terminal-green/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-terminal-green" />
-            <span className="text-xs font-mono text-terminal-green">
-              {ellipseAddress(address, 4)}
-            </span>
-          </div>
-        )}
-      </header>
-
-      {/* ─── Body ─── */}
-      <div className="flex-1 overflow-y-auto">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         {!isConnected ? (
           /* ─── Not Connected State ─── */
-          <div className="flex flex-col items-center justify-center h-full px-4">
-            <div className="max-w-lg w-full border border-gray-700 p-8 bg-[#0d0d0d]">
-              <div className="flex items-center gap-2 mb-6">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-                <span className="font-mono text-sm text-red-400 font-bold uppercase tracking-wider">
-                  Access Denied
-                </span>
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="card p-8 max-w-md w-full text-center">
+              <div className="w-14 h-14 rounded-2xl bg-accent-red/10 flex items-center justify-center mx-auto mb-5">
+                <AlertTriangle className="w-7 h-7 text-accent-red" />
               </div>
-              <div className="font-mono text-sm space-y-2 mb-8">
-                <p className="text-gray-400">
-                  <span className="text-red-400">{'>'}</span> ERROR: NO_IDENTITY_FOUND
-                </p>
-                <p className="text-gray-500">
-                  <span className="text-gray-600">{'>'}</span> Please connect Pera Wallet to publish agents.
-                </p>
-                <p className="text-gray-500">
-                  <span className="text-gray-600">{'>'}</span> Your wallet address serves as your creator identity.
-                </p>
-              </div>
+              <h2 className="text-lg font-semibold text-content dark:text-content-dark mb-2">
+                Wallet Required
+              </h2>
+              <p className="text-sm text-content-secondary dark:text-content-dark-secondary mb-6">
+                Connect your Pera Wallet to publish agents. Your wallet address serves as your creator identity.
+              </p>
               <button
                 onClick={connect}
                 disabled={isConnecting}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/10 hover:border-terminal-green disabled:opacity-50 transition-all duration-150 font-mono text-sm uppercase tracking-wider"
+                className="btn-primary w-full flex items-center justify-center gap-2"
               >
                 {isConnecting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -220,55 +175,52 @@ export default function Publish() {
             </div>
           </div>
         ) : phase === 'deploying' || phase === 'success' || phase === 'error' ? (
-          /* ─── Deploy Terminal Output ─── */
-          <div className="max-w-2xl mx-auto p-6 mt-8">
-            <div className="border border-gray-700">
-              {/* Chrome bar */}
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-700/50 bg-[#0d0d0d]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                </div>
-                <Terminal className="w-3 h-3 text-gray-500 ml-2" />
-                <span className="text-[11px] font-mono text-gray-500">~/ignition/deploy</span>
-              </div>
-
-              {/* Logs */}
-              <div className="p-4 bg-[#0A0A0A] space-y-1 font-mono text-[13px]">
-                {logs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-2 animate-fade-in">
-                    <span className="text-gray-500 select-none">{'>'}</span>
-                    <span className={log.status === 'FAIL' ? 'text-red-400' : log.status === 'INFO' ? 'text-gray-400' : 'text-gray-400'}>
-                      {log.message}
-                    </span>
-                    <StatusBadge status={log.status} />
-                  </div>
-                ))}
-
-                {phase === 'deploying' && (
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-gray-500">{'>'}</span>
-                    <span className="w-2 h-4 bg-terminal-green animate-blink" />
-                  </div>
-                )}
-              </div>
+          /* ─── Deploy Progress ─── */
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h1 className="font-serif text-3xl font-medium text-content dark:text-content-dark mb-2">
+                {phase === 'deploying' ? 'Deploying Agent...' : phase === 'success' ? 'Agent Live!' : 'Deployment Failed'}
+              </h1>
             </div>
 
-            {/* Post-deploy actions */}
+            <div className="card p-6 space-y-3">
+              {logs.map((log) => (
+                <div key={log.id} className="flex items-center gap-3 animate-fade-in">
+                  {log.status === 'OK' && <CheckCircle2 className="w-4 h-4 text-accent-green flex-shrink-0" />}
+                  {log.status === 'PENDING' && <Loader2 className="w-4 h-4 text-accent-orange animate-spin flex-shrink-0" />}
+                  {log.status === 'FAIL' && <AlertTriangle className="w-4 h-4 text-accent-red flex-shrink-0" />}
+                  {log.status === 'INFO' && <Zap className="w-4 h-4 text-accent-purple flex-shrink-0" />}
+                  <span className={`text-sm ${log.status === 'FAIL' ? 'text-accent-red' : 'text-content dark:text-content-dark'}`}>
+                    {log.message}
+                  </span>
+                  <StatusBadge status={log.status} />
+                </div>
+              ))}
+
+              {phase === 'deploying' && (
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-accent-green animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-accent-green animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-accent-green animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {(phase === 'success' || phase === 'error') && (
-              <div className="flex gap-3 mt-4">
+              <div className="flex gap-3">
                 <Link
-                  to="/"
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-all font-mono text-xs uppercase tracking-wider"
+                  to="/home"
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <ArrowLeft className="w-4 h-4" />
                   Back to Playground
                 </Link>
                 {phase === 'error' && (
                   <button
                     onClick={() => { setPhase('idle'); setLogs([]) }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/10 transition-all font-mono text-xs uppercase tracking-wider"
+                    className="btn-primary flex-1"
                   >
                     Retry
                   </button>
@@ -276,9 +228,9 @@ export default function Publish() {
                 {phase === 'success' && (
                   <button
                     onClick={() => { setPhase('idle'); setLogs([]); setForm(INITIAL_FORM) }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/10 transition-all font-mono text-xs uppercase tracking-wider"
+                    className="btn-primary flex-1 flex items-center justify-center gap-2"
                   >
-                    <Rocket className="w-3.5 h-3.5" />
+                    <Rocket className="w-4 h-4" />
                     Deploy Another
                   </button>
                 )}
@@ -287,61 +239,58 @@ export default function Publish() {
           </div>
         ) : (
           /* ─── Publishing Form ─── */
-          <form onSubmit={handleDeploy} className="max-w-2xl mx-auto p-6 mt-4 space-y-6">
-            {/* Section header */}
-            <div className="flex items-center gap-3 pb-4 border-b border-gray-700/40">
-              <Rocket className="w-5 h-5 text-terminal-green" />
-              <div>
-                <h2 className="font-sans font-bold text-lg text-white">Publish Agent</h2>
-                <p className="text-xs font-mono text-gray-500 mt-0.5">
-                  Register a custom AI agent to the Community Agents marketplace
-                </p>
-              </div>
+          <form onSubmit={handleDeploy} className="space-y-6">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="font-serif text-3xl sm:text-4xl font-medium text-content dark:text-content-dark mb-2">
+                Publish Agent
+              </h1>
+              <p className="text-sm text-content-secondary dark:text-content-dark-secondary">
+                Register a custom AI agent to the marketplace
+              </p>
             </div>
 
             {/* Agent Name */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="flex items-center justify-between">
-                <span className="text-xs font-mono text-gray-400 uppercase tracking-wider">Agent Name</span>
-                <span className="text-[10px] font-mono text-gray-600">{form.name.length}/30</span>
+                <span className="text-sm font-medium text-content dark:text-content-dark">Agent Name</span>
+                <span className="text-xs text-content-tertiary dark:text-content-dark-tertiary">{form.name.length}/30</span>
               </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => updateField('name', e.target.value.slice(0, 30))}
                 placeholder="e.g. Smart Contract Auditor"
-                className="w-full px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none placeholder:text-gray-500 focus:border-terminal-green/50 transition-colors"
+                className="input-field"
               />
             </div>
 
             {/* Description */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="flex items-center justify-between">
-                <span className="text-xs font-mono text-gray-400 uppercase tracking-wider">Description</span>
-                <span className="text-[10px] font-mono text-gray-600">{form.description.length}/100</span>
+                <span className="text-sm font-medium text-content dark:text-content-dark">Description</span>
+                <span className="text-xs text-content-tertiary dark:text-content-dark-tertiary">{form.description.length}/100</span>
               </label>
               <input
                 type="text"
                 value={form.description}
                 onChange={(e) => updateField('description', e.target.value.slice(0, 100))}
                 placeholder="Short description of what your agent does"
-                className="w-full px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none placeholder:text-gray-500 focus:border-terminal-green/50 transition-colors"
+                className="input-field"
               />
             </div>
 
-            {/* Hosting Type Toggle */}
+            {/* Hosting Type */}
             <div className="space-y-2">
-              <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
-                Hosting Architecture
-              </label>
-              <div className="flex gap-2">
+              <span className="text-sm font-medium text-content dark:text-content-dark">Hosting</span>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => updateField('hostingType', 'internal')}
-                  className={`flex-1 py-3 px-4 border text-center font-mono text-xs uppercase tracking-wider transition-all ${
+                  className={`p-3 rounded-xl border text-center text-sm font-medium transition-all ${
                     form.hostingType === 'internal'
-                      ? 'border-terminal-green bg-terminal-green/5 text-terminal-green'
-                      : 'border-gray-700/60 bg-transparent text-gray-500 hover:border-gray-600'
+                      ? 'border-accent-green bg-accent-green/5 text-accent-green'
+                      : 'border-border dark:border-border-dark text-content-secondary dark:text-content-dark-secondary hover:border-gray-400 dark:hover:border-gray-500'
                   }`}
                 >
                   Hosted by Ignition
@@ -349,10 +298,10 @@ export default function Publish() {
                 <button
                   type="button"
                   onClick={() => updateField('hostingType', 'external')}
-                  className={`flex-1 py-3 px-4 border text-center font-mono text-xs uppercase tracking-wider transition-all ${
+                  className={`p-3 rounded-xl border text-center text-sm font-medium transition-all ${
                     form.hostingType === 'external'
-                      ? 'border-purple-400 bg-purple-400/5 text-purple-400'
-                      : 'border-gray-700/60 bg-transparent text-gray-500 hover:border-gray-600'
+                      ? 'border-accent-purple bg-accent-purple/5 text-accent-purple'
+                      : 'border-border dark:border-border-dark text-content-secondary dark:text-content-dark-secondary hover:border-gray-400 dark:hover:border-gray-500'
                   }`}
                 >
                   Externally Hosted
@@ -363,59 +312,51 @@ export default function Publish() {
             {form.hostingType === 'internal' ? (
               <>
                 {/* Base Model */}
-                <div className="space-y-1.5 animate-fade-in">
-                  <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
-                    Base Model Engine
-                  </label>
+                <div className="space-y-2 animate-fade-in">
+                  <span className="text-sm font-medium text-content dark:text-content-dark">Base Model</span>
                   <div className="relative">
                     <select
                       value={form.baseModel}
                       onChange={(e) => updateField('baseModel', e.target.value)}
-                      className="w-full px-3 py-2.5 bg-[#0A0A0A] border border-gray-700 text-white font-mono text-sm outline-none appearance-none cursor-pointer focus:border-terminal-green/50 transition-colors"
+                      className="input-field appearance-none cursor-pointer"
                     >
-                      <option value="" disabled className="text-gray-500">
-                        Select engine...
-                      </option>
+                      <option value="" disabled>Select engine...</option>
                       {BASE_MODEL_OPTIONS.map((m) => (
-                        <option key={m.id} value={m.id} className="bg-[#0A0A0A]">
+                        <option key={m.id} value={m.id}>
                           {m.name} ({m.provider})
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
                 </div>
-
-                {/* API key URL */}
-                <div className="space-y-1.5 animate-fade-in">
-                  <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
-                      Your API key
-                  </label>
+                
+                {/* API key */}
+                <div className="space-y-2 animate-fade-in">
+                  <span className="text-sm font-medium text-content dark:text-content-dark">Your API Key</span>
                   <input
                     type="url"
                     value={form.APIkey}
                     onChange={(e) => updateField('APIkey', e.target.value)}
                     placeholder="Enter your API key here"
-                    className="w-full px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none placeholder:text-gray-500 focus:border-purple-400/50 transition-colors"
+                    className="input-field"
                   />
                 </div>
 
                 {/* System Prompt */}
-                <div className="space-y-1.5 animate-fade-in">
-                  <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
-                    System Prompt
-                  </label>
+                <div className="space-y-2 animate-fade-in">
+                  <span className="text-sm font-medium text-content dark:text-content-dark">System Prompt</span>
                   <textarea
                     value={form.systemPrompt}
                     onChange={(e) => updateField('systemPrompt', e.target.value)}
                     placeholder="You are an expert smart contract auditor. Analyze the following TEAL code for vulnerabilities..."
-                    rows={6}
-                    className="w-full px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none resize-y placeholder:text-gray-500 focus:border-terminal-green/50 transition-colors leading-relaxed"
+                    rows={5}
+                    className="input-field resize-y"
                   />
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Lock className="w-3 h-3 text-gray-600" />
-                    <p className="text-[10px] font-mono text-gray-600">
-                      Your IP is secure. This system prompt is encrypted on our servers and never exposed to the client.
+                  <div className="flex items-center gap-1.5">
+                    <Lock className="w-3 h-3 text-content-tertiary dark:text-content-dark-tertiary" />
+                    <p className="text-[11px] text-content-tertiary dark:text-content-dark-tertiary">
+                      Encrypted on our servers. Never exposed to clients.
                     </p>
                   </div>
                 </div>
@@ -423,21 +364,19 @@ export default function Publish() {
             ) : (
               <>
                 {/* Endpoint URL */}
-                <div className="space-y-1.5 animate-fade-in">
-                  <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
-                    Endpoint URL
-                  </label>
+                <div className="space-y-2 animate-fade-in">
+                  <span className="text-sm font-medium text-content dark:text-content-dark">Endpoint URL</span>
                   <input
                     type="url"
                     value={form.endpointUrl}
                     onChange={(e) => updateField('endpointUrl', e.target.value)}
                     placeholder="https://api.yourdomain.com/v1/run"
-                    className="w-full px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none placeholder:text-gray-500 focus:border-purple-400/50 transition-colors"
+                    className="input-field"
                   />
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Shield className="w-3 h-3 text-gray-600" />
-                    <p className="text-[10px] font-mono text-gray-600">
-                      Ignition will act as an L402 payment proxy to this URL.
+                  <div className="flex items-center gap-1.5">
+                    <Shield className="w-3 h-3 text-content-tertiary dark:text-content-dark-tertiary" />
+                    <p className="text-[11px] text-content-tertiary dark:text-content-dark-tertiary">
+                      Ignition acts as an L402 payment proxy to this URL.
                     </p>
                   </div>
                 </div>
@@ -445,10 +384,8 @@ export default function Publish() {
             )}
 
             {/* Price */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
-                Price per Request (ALGO)
-              </label>
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-content dark:text-content-dark">Price per Request (ALGO)</span>
               <div className="flex items-center gap-3">
                 <input
                   type="number"
@@ -456,65 +393,57 @@ export default function Publish() {
                   onChange={(e) => updateField('priceAlgo', Math.max(0, parseFloat(e.target.value) || 0))}
                   step={0.1}
                   min={0.01}
-                  className="w-36 px-3 py-2.5 bg-transparent border border-gray-700 text-white font-mono text-sm outline-none focus:border-terminal-green/50 transition-colors"
+                  className="input-field !w-32"
                 />
-                <span className="text-xs font-mono text-gray-500">
-                  Users pay <span className="text-terminal-green font-bold">{form.priceAlgo}</span> ALGO per prompt
+                <span className="text-sm text-content-secondary dark:text-content-dark-secondary">
+                  Users pay <span className="font-semibold text-accent-green">{form.priceAlgo}</span> ALGO
                 </span>
               </div>
             </div>
 
             {/* Creator identity */}
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-700/40 bg-[#0d0d0d]">
-              <Cpu className="w-3.5 h-3.5 text-gray-500" />
-              <span className="text-[11px] font-mono text-gray-500">Creator Identity:</span>
-              <span className="text-[11px] font-mono text-terminal-green">
-                {ellipseAddress(address, 8)}
-              </span>
-              <span className="text-[10px] font-mono text-gray-600 ml-auto">
-                Payments route to this address
+            <div className="card p-4 flex items-center gap-3">
+              <Cpu className="w-4 h-4 text-content-secondary dark:text-content-dark-secondary flex-shrink-0" />
+              <div>
+                <span className="text-xs text-content-secondary dark:text-content-dark-secondary">Creator Identity: </span>
+                <span className="text-xs font-medium text-accent-green">
+                  {ellipseAddress(address, 8)}
+                </span>
+              </div>
+              <span className="text-[10px] text-content-tertiary dark:text-content-dark-tertiary ml-auto">
+                Payments route here
               </span>
             </div>
 
             {/* Submit */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={!isFormValid}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-terminal-green/40 bg-terminal-green/5 text-terminal-green hover:bg-terminal-green/10 hover:border-terminal-green disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-terminal-green/5 disabled:hover:border-terminal-green/40 transition-all duration-150 font-mono text-sm uppercase tracking-wider"
-              >
-                <Rocket className="w-4 h-4" />
-                Deploy Agent
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={!isFormValid}
+              className="btn-primary w-full flex items-center justify-center gap-2 !py-3.5"
+            >
+              <Rocket className="w-4 h-4" />
+              Deploy Agent
+            </button>
 
-            {/* Preview summary */}
+            {/* Preview */}
             {isFormValid && (
-              <div className="border border-gray-700/30 p-3 bg-[#0d0d0d] font-mono text-[11px] space-y-0.5 animate-fade-in">
-                <p className="text-gray-500 mb-1 uppercase tracking-wider text-[10px]">Deploy Preview</p>
-                <p className="text-gray-400">
-                  <span className="text-gray-600">{'>'}</span> name: <span className="text-white">{form.name}</span>
-                </p>
-                {form.hostingType === 'internal' ? (
-                  <p className="text-gray-400">
-                    <span className="text-gray-600">{'>'}</span> engine: <span className="text-white">{BASE_MODEL_OPTIONS.find((m) => m.id === form.baseModel)?.name}</span>
-                  </p>
-                ) : (
-                  <p className="text-gray-400">
-                    <span className="text-gray-600">{'>'}</span> endpoint: <span className="text-white">{form.endpointUrl}</span>
-                  </p>
-                )}
-                <p className="text-gray-400">
-                  <span className="text-gray-600">{'>'}</span> price: <span className="text-green-500">{form.priceAlgo} ALGO</span>
-                </p>
-                <p className="text-gray-400">
-                  <span className="text-gray-600">{'>'}</span> creator: <span className="text-green-500">{ellipseAddress(address, 6)}</span>
-                </p>
+              <div className="card p-4 space-y-2 animate-fade-in">
+                <p className="text-xs font-medium text-content-secondary dark:text-content-dark-secondary uppercase tracking-wider mb-2">Deploy Preview</p>
+                <div className="text-sm space-y-1 text-content dark:text-content-dark">
+                  <p><span className="text-content-secondary dark:text-content-dark-secondary">Name:</span> {form.name}</p>
+                  {form.hostingType === 'internal' ? (
+                    <p><span className="text-content-secondary dark:text-content-dark-secondary">Engine:</span> {BASE_MODEL_OPTIONS.find((m) => m.id === form.baseModel)?.name}</p>
+                  ) : (
+                    <p><span className="text-content-secondary dark:text-content-dark-secondary">Endpoint:</span> {form.endpointUrl}</p>
+                  )}
+                  <p><span className="text-content-secondary dark:text-content-dark-secondary">Price:</span> <span className="text-accent-green font-semibold">{form.priceAlgo} ALGO</span></p>
+                  <p><span className="text-content-secondary dark:text-content-dark-secondary">Creator:</span> <span className="text-accent-green">{ellipseAddress(address, 6)}</span></p>
+                </div>
               </div>
             )}
           </form>
         )}
-      </div>
+      </main>
     </div>
   )
 }
