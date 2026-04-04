@@ -6,8 +6,6 @@ import { generateApiKey, hitApiKey, chatCompletion, getApiKeyStats } from './rou
 import agentRoutes from './routes/agent.routes';
 import dns from 'node:dns';
 import { generateRoute } from './controllers/generate';
-import { generateApiKey, hitApiKey, getApiKeyStats } from './routes/apikeys';
-import agentRoutes from './routes/agent.routes';
 import baseModelsRouter from './routes/baseModels';
 
 dotenv.config();

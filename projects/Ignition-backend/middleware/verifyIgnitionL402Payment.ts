@@ -129,7 +129,7 @@ const respondPaymentRequired = (res: Response): void => {
   res.status(402).json({
     status: 402,
     requiredAmountAlgo: BASE_MODEL_PRICE_ALGO,
-    message: 'Payment required via IgnitionGateway Smart Contract',
+    message: 'Payment required via Ignition payment flow',
   });
 };
 
@@ -143,8 +143,10 @@ const respondUnauthorized = (res: Response, txId: string, reason: string): void 
 // What this middleware guarantees before your AI route executes:
 // 1) A txId exists in Authorization: Bearer <txId>.
 // 2) The txId is confirmed on Algorand Testnet.
-// 3) The transaction is an app call to your IgnitionGateway app ID.
-// 4) The same atomic group contains a payment >= 0.1 ALGO to your treasury.
+// 3) The transaction is either:
+//    a) an app call to your IgnitionGateway app ID with grouped treasury payment, OR
+//    b) a direct treasury payment (delegated LogicSig mode).
+// 4) The payment amount is >= 0.1 ALGO to your treasury.
 // 5) The txId has not been used before (simple replay / double-spend defense).
 export const verifyIgnitionL402Payment = async (
   req: Request,
@@ -162,9 +164,9 @@ export const verifyIgnitionL402Payment = async (
   }
 
   // Validate required server-side configuration.
-  if (!gatewayAppId || !treasuryAddress) {
+  if (!treasuryAddress) {
     res.status(500).json({
-      error: 'Server misconfigured. Set IGNITION_GATEWAY_APP_ID and IGNITION_TREASURY_ADDRESS.',
+      error: 'Server misconfigured. Set IGNITION_TREASURY_ADDRESS.',
     });
     return;
   }
@@ -181,7 +183,7 @@ export const verifyIgnitionL402Payment = async (
     return;
   }
 
-  let appCallTxn: IndexerTxn;
+  let onChainTxn: IndexerTxn;
   let confirmedRound = 0;
 
   try {
@@ -202,8 +204,8 @@ export const verifyIgnitionL402Payment = async (
       12,
       1000,
     );
-    appCallTxn = lookup.transaction as IndexerTxn;
-    confirmedRound = getConfirmedRound(appCallTxn);
+    onChainTxn = lookup.transaction as IndexerTxn;
+    confirmedRound = getConfirmedRound(onChainTxn);
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'Invalid txId or indexer lookup failed';
     if (reason.includes('not confirmed')) {
@@ -221,64 +223,100 @@ export const verifyIgnitionL402Payment = async (
     return;
   }
 
-  // 2) Must be an application call to your payment-verifier contract.
-  if (getTxType(appCallTxn) !== 'appl') {
-    respondUnauthorized(res, txId, 'txId must reference an application call transaction');
-    return;
-  }
+  const txType = getTxType(onChainTxn);
+  let verifiedPayment: VerifiedIgnitionPayment | null = null;
 
-  const appId = getApplicationId(appCallTxn);
-  if (appId !== gatewayAppId) {
-    respondUnauthorized(res, txId, 'Application ID mismatch for IgnitionGateway');
-    return;
-  }
+  if (txType === 'appl') {
+    if (!gatewayAppId) {
+      res.status(500).json({
+        error: 'Server misconfigured. Set IGNITION_GATEWAY_APP_ID for app-call verification mode.',
+      });
+      return;
+    }
 
-  // Optional but strong signal: your contract logs PAID_BASE_MODEL on successful verification.
-  const logs = appCallTxn.logs || [];
-  const containsSuccessLog = logs.some((entry) => decodeLogEntry(entry).includes('PAID_BASE_MODEL'));
-  if (!containsSuccessLog) {
-    console.warn(`[L402] txId=${txId}: Missing expected IgnitionGateway success log (continuing)`);
-  }
+    const appId = getApplicationId(onChainTxn);
+    if (appId !== gatewayAppId) {
+      respondUnauthorized(res, txId, 'Application ID mismatch for IgnitionGateway');
+      return;
+    }
 
-  // 3) Payment guarantee comes from atomic group inspection:
-  //    We locate every tx in the same group, then find at least one payment tx
-  //    that pays treasury >= required base model price.
-  const groupId = normalizeGroupId(appCallTxn.group);
-  if (!groupId) {
-    respondUnauthorized(res, txId, 'Expected grouped transaction but group ID is missing');
-    return;
-  }
+    // Optional but strong signal: your contract logs PAID_BASE_MODEL on successful verification.
+    const logs = onChainTxn.logs || [];
+    const containsSuccessLog = logs.some((entry) => decodeLogEntry(entry).includes('PAID_BASE_MODEL'));
+    if (!containsSuccessLog) {
+      console.warn(`[L402] txId=${txId}: Missing expected IgnitionGateway success log (continuing)`);
+    }
 
-  let groupTxns: IndexerTxn[] = [];
-  try {
-    const groupLookup = await withRetry(
-      async () => {
-        const result = await indexer.searchForTransactions().groupid(groupId).do();
-        const txns = (result.transactions || []) as IndexerTxn[];
-        if (txns.length === 0) {
-          throw new Error('Grouped transactions not indexed yet');
-        }
-        return result;
-      },
-      6,
-      900,
-    );
-    groupTxns = (groupLookup.transactions || []) as IndexerTxn[];
-  } catch {
-    respondUnauthorized(res, txId, 'Failed to load grouped transactions for verification');
-    return;
-  }
+    // Payment guarantee comes from atomic group inspection.
+    const groupId = normalizeGroupId(onChainTxn.group);
+    if (!groupId) {
+      respondUnauthorized(res, txId, 'Expected grouped transaction but group ID is missing');
+      return;
+    }
 
-  const qualifyingPayment = groupTxns.find((txn) => {
-    if (getTxType(txn) !== 'pay') return false;
-    if (getConfirmedRound(txn) <= 0) return false;
-    const receiver = getPaymentReceiver(txn);
-    const amount = getPaymentAmount(txn);
-    return receiver === treasuryAddress && amount >= BASE_MODEL_PRICE_MICROALGOS;
-  });
+    let groupTxns: IndexerTxn[] = [];
+    try {
+      const groupLookup = await withRetry(
+        async () => {
+          const result = await indexer.searchForTransactions().groupid(groupId).do();
+          const txns = (result.transactions || []) as IndexerTxn[];
+          if (txns.length === 0) {
+            throw new Error('Grouped transactions not indexed yet');
+          }
+          return result;
+        },
+        6,
+        900,
+      );
+      groupTxns = (groupLookup.transactions || []) as IndexerTxn[];
+    } catch {
+      respondUnauthorized(res, txId, 'Failed to load grouped transactions for verification');
+      return;
+    }
 
-  if (!qualifyingPayment) {
-    respondUnauthorized(res, txId, 'No qualifying treasury payment found in transaction group');
+    const qualifyingPayment = groupTxns.find((txn) => {
+      if (getTxType(txn) !== 'pay') return false;
+      if (getConfirmedRound(txn) <= 0) return false;
+      const receiver = getPaymentReceiver(txn);
+      const amount = getPaymentAmount(txn);
+      return receiver === treasuryAddress && amount >= BASE_MODEL_PRICE_MICROALGOS;
+    });
+
+    if (!qualifyingPayment) {
+      respondUnauthorized(res, txId, 'No qualifying treasury payment found in transaction group');
+      return;
+    }
+
+    verifiedPayment = {
+      txId,
+      groupId,
+      payer: qualifyingPayment.sender || 'unknown',
+      amountMicroAlgos: getPaymentAmount(qualifyingPayment),
+      confirmedRound,
+    };
+  } else if (txType === 'pay') {
+    const receiver = getPaymentReceiver(onChainTxn);
+    const amount = getPaymentAmount(onChainTxn);
+
+    if (receiver !== treasuryAddress) {
+      respondUnauthorized(res, txId, 'Direct payment receiver does not match treasury');
+      return;
+    }
+
+    if (amount < BASE_MODEL_PRICE_MICROALGOS) {
+      respondUnauthorized(res, txId, 'Direct payment amount is below base model price');
+      return;
+    }
+
+    verifiedPayment = {
+      txId,
+      groupId: normalizeGroupId(onChainTxn.group) || 'DIRECT_PAYMENT',
+      payer: onChainTxn.sender || 'unknown',
+      amountMicroAlgos: amount,
+      confirmedRound,
+    };
+  } else {
+    respondUnauthorized(res, txId, 'txId must reference either a payment or application call transaction');
     return;
   }
 
@@ -287,13 +325,7 @@ export const verifyIgnitionL402Payment = async (
 
   const verifiedRequest = req as L402VerifiedRequest;
 
-  verifiedRequest.ignitionPayment = {
-    txId,
-    groupId,
-    payer: qualifyingPayment.sender || 'unknown',
-    amountMicroAlgos: getPaymentAmount(qualifyingPayment),
-    confirmedRound,
-  };
+  verifiedRequest.ignitionPayment = verifiedPayment;
 
   verifiedRequest.finalizeIgnitionPayment = (consumed: boolean) => {
     inFlightTxIds.delete(txId);

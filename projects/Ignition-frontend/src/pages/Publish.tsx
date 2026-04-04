@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { usePeraWallet } from '../hooks/usePeraWallet'
 import { ellipseAddress } from '../utils/ellipseAddress'
-import ApiService from '../utils/APIService'
+import ApiService from '../utils/apiservice'
 
 interface AgentFormState {
   name: string
@@ -111,7 +111,7 @@ export default function Publish() {
       await sleep(400)
       patchLog(v, { status: 'OK', message: 'Configuration valid' })
       const reg = pushLog(`POST /api/agents/create — pushing to registry...`, 'PENDING')
-    
+
       try {
         await ApiService.publishAgent(payload);
         console.log("Agent published successfully")
@@ -122,8 +122,8 @@ export default function Publish() {
         setPhase('success')
         console.log("Deployment successful")
       } catch (err: any) {
-        patchLog(reg, { 
-          status: 'FAIL', 
+        patchLog(reg, {
+          status: 'FAIL',
             message: `Deployment failed: ${err.message}`
         })
         setPhase('error')
@@ -385,7 +385,7 @@ export default function Publish() {
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                   </div>
                 </div>
-                
+
                 {/* API key URL */}
                 <div className="space-y-1.5 animate-fade-in">
                   <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">

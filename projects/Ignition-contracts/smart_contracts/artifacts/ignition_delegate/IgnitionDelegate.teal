@@ -1,0 +1,53 @@
+#pragma version 11
+#pragma typetrack false
+
+// smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts::program() -> uint64:
+main:
+    intcblock 1 TMPL_EXPIRATION_ROUND
+    bytecblock TMPL_TREASURY_ADDRESS
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:19
+    // assert(Txn.typeEnum === TransactionType.Payment, 'Only payment transactions are allowed')
+    txn TypeEnum
+    intc_0 // 1
+    ==
+    assert // Only payment transactions are allowed
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:20
+    // assert(Txn.receiver === treasuryAddress, 'Invalid treasury receiver')
+    txn Receiver
+    bytec_0 // TMPL_TREASURY_ADDRESS
+    ==
+    assert // Invalid treasury receiver
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:21
+    // assert(Txn.amount <= 1_000_000, 'Payment exceeds max session ceiling')
+    txn Amount
+    pushint 1000000 // 1000000
+    <=
+    assert // Payment exceeds max session ceiling
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:22
+    // assert(Txn.lastValid <= expirationRound, 'Session has expired')
+    txn LastValid
+    intc_1 // TMPL_EXPIRATION_ROUND
+    <=
+    assert // Session has expired
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:25
+    // assert(Txn.fee <= 1_000, 'Fee too high')
+    txn Fee
+    pushint 1000 // 1000
+    <=
+    assert // Fee too high
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:26
+    // assert(Txn.rekeyTo === Global.zeroAddress, 'Rekey is not allowed')
+    txn RekeyTo
+    global ZeroAddress
+    ==
+    assert // Rekey is not allowed
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:27
+    // assert(Txn.closeRemainderTo === Global.zeroAddress, 'Close remainder is not allowed')
+    txn CloseRemainderTo
+    global ZeroAddress
+    ==
+    assert // Close remainder is not allowed
+    // smart_contracts/ignition_delegate/IgnitionDelegate.algo.ts:29
+    // return true
+    intc_0 // 1
+    return

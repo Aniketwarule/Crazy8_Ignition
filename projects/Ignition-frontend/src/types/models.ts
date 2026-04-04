@@ -43,7 +43,6 @@ export const BASE_MODELS: AIModel[] = [
     id: 'gemini-2.0-flash',
     name: 'Gemini 2.0 Flash',
     description: "Google's fast multimodal model",
-    cost: 0.1,
     costMicroAlgos: 100_000,
     destinationType: 'treasury',
     destinationAddress: TREASURY_ADDRESS,

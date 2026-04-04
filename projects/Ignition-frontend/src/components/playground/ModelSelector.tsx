@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Cpu, Users, ChevronRight, Zap, Key } from 'lucide-react'
 import type { AIModel, ModelCategory } from '../../types/models'
 import { BASE_MODELS, COMMUNITY_AGENTS } from '../../types/models'
-import APIService from '../../utils/APIService'
+import APIService from '../../utils/apiservice'
 
 interface ModelSelectorProps {
   selected: AIModel | null
@@ -20,7 +20,7 @@ export default function ModelSelector({ selected, onSelect }: ModelSelectorProps
         const data = await getAgents();
         if (Array.isArray(data)) {
           setAgents(data);
-        } else if (data?.agents) { 
+        } else if (data?.agents) {
           setAgents(data.agents);
         }
       } catch (error) {

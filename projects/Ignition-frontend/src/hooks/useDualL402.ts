@@ -1,18 +1,16 @@
-import { useState, useCallback, useRef } from 'react'
-import algosdk from 'algosdk'
-import { usePeraWallet } from './usePeraWallet'
+import { useCallback, useRef, useState } from 'react'
 import type { TerminalLogEntry, L402Challenge, L402Step } from '../types/l402'
 import type { AIModel } from '../types/models'
-
-// ─────────────────────────────────────────────────────
-// Constants & Helpers
-// ─────────────────────────────────────────────────────
+import { useFrictionlessSession } from './useFrictionlessSession'
+import { usePeraWallet } from './usePeraWallet'
 
 const API_URL =
   import.meta.env.VITE_BASE_MODELS_API_URL ||
   import.meta.env.VITE_API_URL ||
   'http://localhost:8080/api/base-models/generate'
-const IGNITION_GATEWAY_APP_ID = Number(import.meta.env.VITE_IGNITION_GATEWAY_APP_ID || '0')
+
+const DEFAULT_SESSION_BLOCKS = 1_000
+
 let _counter = 0
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
@@ -32,7 +30,6 @@ function log(
 }
 
 async function parseChallenge(res: Response): Promise<L402Challenge> {
-  // Try x402 header first
   const header = res.headers.get('payment-required')
   if (header) {
     try {
@@ -44,9 +41,11 @@ async function parseChallenge(res: Response): Promise<L402Challenge> {
         invoiceId: parsed.invoiceId ?? parsed.id ?? '',
         message: parsed.message ?? 'Payment required',
       }
-    } catch { /* fall through */ }
+    } catch {
+      // fall through
+    }
   }
-  // Fallback: JSON body
+
   const body = await res.json()
   const amountAlgos = Number(body.amountAlgos ?? body.requiredAmountAlgo ?? body.price ?? 0)
   return {
@@ -58,23 +57,6 @@ async function parseChallenge(res: Response): Promise<L402Challenge> {
   }
 }
 
-function createPeraSigner(
-  peraWallet: { signTransaction: (txGroups: Array<Array<{ txn: algosdk.Transaction; signers: string[] }>>) => Promise<Uint8Array[]> },
-  address: string,
-): algosdk.TransactionSigner {
-  return async (txnGroup, indexesToSign) => {
-    const txnsToSign = indexesToSign.map((index) => ({
-      txn: txnGroup[index],
-      signers: [address],
-    }))
-    return peraWallet.signTransaction([txnsToSign])
-  }
-}
-
-// ─────────────────────────────────────────────────────
-// Hook
-// ─────────────────────────────────────────────────────
-
 export interface DualL402State {
   isProcessing: boolean
   currentStep: L402Step
@@ -83,7 +65,8 @@ export interface DualL402State {
 }
 
 export function useDualL402(selectedModel: AIModel | null) {
-  const { address, peraWallet, getAlgodClient, refreshBalance } = usePeraWallet()
+  const { address } = usePeraWallet()
+  const { state: sessionState, startSession, executePromptPayment } = useFrictionlessSession()
 
   const [state, setState] = useState<DualL402State>({
     isProcessing: false,
@@ -114,8 +97,6 @@ export function useDualL402(selectedModel: AIModel | null) {
     setState({ isProcessing: false, currentStep: 'idle', txId: null, error: null })
   }, [])
 
-  // ─── The Dual-Mode L402 Execution Loop ───
-
   const executePrompt = useCallback(
     async (prompt: string) => {
       if (!address) {
@@ -130,41 +111,18 @@ export function useDualL402(selectedModel: AIModel | null) {
         push('ERROR: Community agents are not wired to this base-model endpoint yet.', 'FAIL')
         return
       }
-      if (!IGNITION_GATEWAY_APP_ID) {
-        push('ERROR: Missing VITE_IGNITION_GATEWAY_APP_ID in frontend env.', 'FAIL')
-        return
-      }
 
-      const legacyModelMap: Record<string, string> = {
-        'gemini-1.5-pro': 'gemini-2.0-flash',
-      }
-      const modelForBackend = selectedModel.id.startsWith('gemini')
-        ? (legacyModelMap[selectedModel.id] || selectedModel.id)
-        : 'gemini-2.0-flash'
-      if (modelForBackend !== selectedModel.id) {
-        push(`INFO: Backend currently supports Gemini. Using ${modelForBackend}.`, 'INFO')
-      }
-
-      const treasuryAddress = import.meta.env.VITE_IGNITION_TREASURY_ADDRESS || selectedModel.destinationAddress
-      if (!algosdk.isValidAddress(treasuryAddress)) {
-        push('ERROR: Invalid treasury address. Set VITE_IGNITION_TREASURY_ADDRESS.', 'FAIL')
-        return
-      }
+      const modelForBackend = selectedModel.id
 
       setState({ isProcessing: true, currentStep: 'requesting', txId: null, error: null })
 
-      // Log user input
       push(prompt, 'INPUT', { prefix: '$' })
 
-      // Model context log
       const modeTag = selectedModel.destinationType === 'treasury' ? 'PREMIUM' : 'CREATOR'
-      const destLabel = selectedModel.destinationType === 'treasury'
-        ? 'Platform Treasury'
-        : selectedModel.creator ?? 'Creator'
-      push(`[${modeTag}] ${selectedModel.name} | ${selectedModel.cost} ALGO → ${destLabel}`, 'INFO')
+      const destLabel = selectedModel.destinationType === 'treasury' ? 'Platform Treasury' : selectedModel.creator ?? 'Creator'
+      push(`[${modeTag}] ${selectedModel.name} | ${selectedModel.cost} ALGO -> ${destLabel}`, 'INFO')
 
-      // ─── Step 1: POST to /api/base-models/generate ───
-      const reqId = push(`POST ${API_URL} {model: "${modelForBackend}"} — awaiting...`, 'PENDING')
+      const reqId = push(`POST ${API_URL} {model: "${modelForBackend}"} - awaiting...`, 'PENDING')
 
       let res: Response
       try {
@@ -174,15 +132,14 @@ export function useDualL402(selectedModel: AIModel | null) {
           body: JSON.stringify({ prompt, model: modelForBackend }),
         })
       } catch {
-        patch(reqId, { status: 'FAIL', message: `POST ${API_URL} — network error` })
+        patch(reqId, { status: 'FAIL', message: `POST ${API_URL} - network error` })
         setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: 'Network error' }))
         return
       }
 
-      // ─── Step 2: Non-402 responses ───
       if (res.status !== 402) {
         if (res.ok) {
-          patch(reqId, { status: 'OK', message: `POST — HTTP ${res.status}` })
+          patch(reqId, { status: 'OK', message: `POST - HTTP ${res.status}` })
           try {
             const data = await res.json()
             push(data.result || JSON.stringify(data), 'STREAM', { isAiResponse: true })
@@ -192,13 +149,12 @@ export function useDualL402(selectedModel: AIModel | null) {
           setState((s) => ({ ...s, isProcessing: false, currentStep: 'complete' }))
           return
         }
-        patch(reqId, { status: 'FAIL', message: `POST — HTTP ${res.status} ${res.statusText}` })
+        patch(reqId, { status: 'FAIL', message: `POST - HTTP ${res.status} ${res.statusText}` })
         setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: res.statusText }))
         return
       }
 
-      // ─── Step 3: HTTP 402 — Parse challenge ───
-      patch(reqId, { status: 'OK', message: 'HTTP 402 — Payment Required' })
+      patch(reqId, { status: 'OK', message: 'HTTP 402 - Payment Required' })
       setStep('payment_required')
 
       let challenge: L402Challenge
@@ -210,166 +166,141 @@ export function useDualL402(selectedModel: AIModel | null) {
         return
       }
 
-      const destAddr = treasuryAddress
       const amount = challenge.amountMicroAlgos || selectedModel.costMicroAlgos
       const amountAlgo = (amount / 1e6).toFixed(2)
+      push(`Invoice: ${challenge.invoiceId} | ${amountAlgo} ALGO`, 'INFO')
 
-      push(`Invoice: ${challenge.invoiceId} | ${amountAlgo} ALGO → ${destAddr.slice(0, 6)}...${destAddr.slice(-4)}`, 'INFO')
-
-      // ─── Step 4: Build grouped payment + app-call transactions ───
-      setStep('signing')
-      const signId = push('Awaiting Pera Wallet signature...', 'PENDING')
-
-      try {
-        const algod = getAlgodClient()
-        const params = await algod.getTransactionParams().do()
-        const signer = createPeraSigner(peraWallet, address)
-
-        const payTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-          sender: address,
-          receiver: destAddr,
-          amount: amount,
-          suggestedParams: params,
-          note: new TextEncoder().encode(`ignition:base:${selectedModel.id}:${challenge.invoiceId || Date.now()}`),
-        })
-
-        const atc = new algosdk.AtomicTransactionComposer()
-        atc.addMethodCall({
-          appID: IGNITION_GATEWAY_APP_ID,
-          method: algosdk.ABIMethod.fromSignature('payForAi(pay)void'),
-          sender: address,
-          suggestedParams: params,
-          signer,
-          methodArgs: [{ txn: payTxn, signer }],
-        })
-
-        // ─── Step 5: Sign with Pera ───
-        patch(signId, { status: 'OK', message: 'Wallet signature received' })
-
-        // ─── Step 6: Broadcast ───
-        setStep('broadcasting')
-        const broadId = push('Broadcasting to Algorand...', 'PENDING')
-
-        const atcResult = await atc.execute(algod, 4)
-        const txId = atcResult.methodResults?.[0]?.txID || atcResult.txIDs[atcResult.txIDs.length - 1]
-        if (!txId) {
-          throw new Error('Unable to determine IgnitionGateway app call txId')
+      if (!sessionState.isActive) {
+        const startId = push('Starting delegated session (one-time wallet approval)...', 'PENDING')
+        try {
+          const started = await startSession(DEFAULT_SESSION_BLOCKS)
+          patch(startId, {
+            status: 'OK',
+            message: `Session active until round ${started.expirationRound}`,
+          })
+          push(`LogicSig session address: ${started.logicSigAddress}`, 'INFO')
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to start delegated session'
+          patch(startId, { status: 'FAIL', message })
+          setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: message }))
+          return
         }
+      }
 
-        patch(broadId, { status: 'OK', message: 'Transaction confirmed on-chain' })
-        push(`Gateway app-call TxID: ${txId}`, 'INFO')
+      setStep('broadcasting')
+      const payId = push('Sending delegated payment (no wallet popup)...', 'PENDING')
+
+      let txId = ''
+      try {
+        const paymentResult = await executePromptPayment(amount / 1_000_000)
+        txId = paymentResult.txId
+        patch(payId, { status: 'OK', message: 'Delegated payment confirmed on-chain' })
+        push(`Payment TxID: ${txId}`, 'INFO')
         setState((s) => ({ ...s, txId }))
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Delegated payment failed'
+        patch(payId, { status: 'FAIL', message })
+        setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: message }))
+        return
+      }
 
-        // Refresh wallet balance
-        refreshBalance()
+      setStep('verifying')
+      const retryId = push('Retrying with payment proof...', 'PENDING')
 
-        // ─── Step 7: Retry with payment proof ───
-        setStep('verifying')
-        const retryId = push('Retrying with payment proof...', 'PENDING')
+      let retry: Response | undefined
+      let retryReason = ''
+      let fetchFailed = false
 
-        let retry: Response
-        let retryReason = ''
-        let fetchFailed = false
-
-        for (let attempt = 1; attempt <= 4; attempt += 1) {
-          try {
-            retry = await fetch(API_URL, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${txId}`,
-              },
-              body: JSON.stringify({ prompt, model: modelForBackend }),
-            })
-          } catch {
-            fetchFailed = true
-            break
-          }
-
-          if (retry.ok) {
-            break
-          }
-
-          let reason = ''
-          try {
-            const text = await retry.text()
-            if (text) {
-              try {
-                const parsed = JSON.parse(text)
-                reason = parsed.error || parsed.message || text
-              } catch {
-                reason = text
-              }
-            }
-          } catch {
-            // ignore parse failures
-          }
-
-          retryReason = reason || `HTTP ${retry.status}`
-
-          // Indexer can lag right after on-chain confirmation.
-          if (retry.status === 401 && retryReason.toLowerCase().includes('not confirmed') && attempt < 4) {
-            patch(retryId, {
-              status: 'PENDING',
-              message: `Retry attempt ${attempt}/4 — waiting for indexer confirmation...`,
-            })
-            await delay(1500)
-            continue
-          }
-
+      for (let attempt = 1; attempt <= 5; attempt += 1) {
+        try {
+          retry = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${txId}`,
+            },
+            body: JSON.stringify({ prompt, model: modelForBackend }),
+          })
+        } catch {
+          fetchFailed = true
           break
         }
 
-        if (fetchFailed || !retry!) {
-          patch(retryId, { status: 'FAIL', message: 'Retry failed — network error' })
-          setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: 'Retry failed' }))
-          return
+        if (retry.ok) {
+          break
         }
 
-        if (!retry.ok) {
-          const reason = retryReason || 'Verification failed'
-
-          patch(retryId, { status: 'FAIL', message: `Retry — HTTP ${retry.status}: ${reason}` })
-          push(`Backend verification failed: ${reason}`, 'FAIL')
-          setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: reason }))
-          return
-        }
-
-        patch(retryId, { status: 'OK', message: 'Payment verified — streaming response' })
-
-        // ─── Step 8: Stream response ───
-        setStep('streaming')
-        const reader = retry.body?.getReader()
-        if (reader) {
-          const decoder = new TextDecoder()
-          let full = ''
-          const streamId = push('', 'STREAM', { isAiResponse: true })
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            full += decoder.decode(value, { stream: true })
-            patch(streamId, { message: full })
+        let reason = ''
+        try {
+          const text = await retry.text()
+          if (text) {
+            try {
+              const parsed = JSON.parse(text)
+              reason = parsed.error || parsed.message || text
+            } catch {
+              reason = text
+            }
           }
-          if (!full) patch(streamId, { message: '[Empty response]', status: 'INFO' })
-        } else {
-          try {
-            const data = await retry.json()
-            push(data.result || JSON.stringify(data), 'STREAM', { isAiResponse: true })
-          } catch {
-            push(await retry.text(), 'STREAM', { isAiResponse: true })
-          }
+        } catch {
+          // ignore parse failures
         }
 
-        push('Generation complete.', 'OK')
-        setState((s) => ({ ...s, isProcessing: false, currentStep: 'complete' }))
-      } catch (err) {
-        patch(signId, { status: 'FAIL', message: 'Transaction failed' })
-        const msg = err instanceof Error ? err.message : 'Transaction error'
-        push(`Error: ${msg}`, 'FAIL')
-        setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: msg }))
+        retryReason = reason || `HTTP ${retry.status}`
+
+        if (retry.status === 401 && attempt < 5) {
+          patch(retryId, {
+            status: 'PENDING',
+            message: `Retry attempt ${attempt}/5 - waiting for indexer confirmation...`,
+          })
+          await delay(1400)
+          continue
+        }
+
+        break
       }
+
+      if (fetchFailed || !retry) {
+        patch(retryId, { status: 'FAIL', message: 'Retry failed - network error' })
+        setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: 'Retry failed' }))
+        return
+      }
+
+      if (!retry.ok) {
+        const reason = retryReason || 'Verification failed'
+        patch(retryId, { status: 'FAIL', message: `Retry - HTTP ${retry.status}: ${reason}` })
+        push(`Backend verification failed: ${reason}`, 'FAIL')
+        setState((s) => ({ ...s, isProcessing: false, currentStep: 'error', error: reason }))
+        return
+      }
+
+      patch(retryId, { status: 'OK', message: 'Payment verified - streaming response' })
+
+      setStep('streaming')
+      const reader = retry.body?.getReader()
+      if (reader) {
+        const decoder = new TextDecoder()
+        let full = ''
+        const streamId = push('', 'STREAM', { isAiResponse: true })
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          full += decoder.decode(value, { stream: true })
+          patch(streamId, { message: full })
+        }
+        if (!full) patch(streamId, { message: '[Empty response]', status: 'INFO' })
+      } else {
+        try {
+          const data = await retry.json()
+          push(data.result || JSON.stringify(data), 'STREAM', { isAiResponse: true })
+        } catch {
+          push(await retry.text(), 'STREAM', { isAiResponse: true })
+        }
+      }
+
+      push('Generation complete.', 'OK')
+      setState((s) => ({ ...s, isProcessing: false, currentStep: 'complete' }))
     },
-    [address, selectedModel, peraWallet, getAlgodClient, refreshBalance, push, patch, setStep],
+    [address, executePromptPayment, patch, push, selectedModel, sessionState.isActive, setStep, startSession],
   )
 
   return { state, logs, executePrompt, clearLogs }
