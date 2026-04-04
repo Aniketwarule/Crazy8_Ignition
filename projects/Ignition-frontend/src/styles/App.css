@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────
-   IGNITION — Terminal Brutalist Design System
+   IGNITION — Premium Design System
    ───────────────────────────────────────────────────── */
 
 @layer base {
@@ -21,85 +21,209 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* ─── Light theme (default) ─── */
   body {
-    background-color: #0A0A0A;
-    color: #E0E0E0;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    overflow: hidden;
+    background-color: #f7f7f8;
+    color: #1a1a1a;
+    font-family: 'Inter', system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* ─── Dark theme ─── */
+  .dark body {
+    background-color: #171717;
+    color: #e5e5e5;
   }
 
   ::selection {
-    background-color: #00FFA333;
-    color: #00FFA3;
+    background-color: rgba(94, 234, 212, 0.15);
+    color: inherit;
   }
 
-  /* Custom scrollbar — brutal thin style */
+  .dark ::selection {
+    background-color: rgba(94, 234, 212, 0.2);
+    color: #fff;
+  }
+
+  /* Scrollbar */
   ::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0A0A0A;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #333333;
-    border-radius: 0;
+    background: #d1d1d1;
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #00FFA3;
+    background: #aaa;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: #333;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #555;
   }
 }
 
 @layer components {
-  /* Terminal window chrome dots */
-  .terminal-dot {
-    @apply w-2.5 h-2.5 rounded-full;
+  /* ─── Floating Navbar ─── */
+  .navbar-float {
+    @apply fixed top-4 left-1/2 -translate-x-1/2 z-50
+           flex items-center justify-between gap-4
+           px-5 py-2.5
+           rounded-2xl
+           bg-white/80 dark:bg-[#1e1e1e]/90
+           backdrop-blur-xl
+           border border-black/[0.06] dark:border-white/[0.06]
+           transition-all duration-300;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    width: min(calc(100% - 32px), 1200px);
+  }
+  .dark .navbar-float {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
 
-  /* Status badges */
-  .badge-ok {
-    @apply text-terminal-green font-bold;
+  /* ─── Chat message bubbles ─── */
+  .msg-user {
+    @apply ml-auto max-w-[75%] px-4 py-3
+           bg-[#1a1a1a] dark:bg-[#e5e5e5] text-white dark:text-[#171717]
+           rounded-2xl rounded-br-md
+           text-sm leading-relaxed;
   }
-  .badge-pending {
-    @apply text-terminal-yellow font-bold animate-pulse-slow;
+  .msg-ai {
+    @apply mr-auto max-w-[80%] px-4 py-3
+           bg-transparent
+           text-[#1a1a1a] dark:text-[#e5e5e5]
+           text-sm leading-relaxed;
   }
-  .badge-fail {
-    @apply text-terminal-red font-bold;
-  }
-  .badge-info {
-    @apply text-terminal-teal font-bold;
+  .msg-system {
+    @apply mx-auto text-center text-xs
+           text-gray-400 dark:text-gray-500
+           px-3 py-1;
   }
 
-  /* Brutalist button — no rounded corners */
-  .btn-brutal {
-    @apply px-4 py-2 border border-terminal-green/30 bg-transparent text-terminal-green
-           font-mono text-sm tracking-wider uppercase cursor-pointer
+  /* ─── Card ─── */
+  .card {
+    @apply bg-white dark:bg-[#1e1e1e]
+           border border-black/[0.06] dark:border-white/[0.05]
+           rounded-2xl
+           transition-all duration-200;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .dark .card {
+    box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  }
+  .card:hover {
+    box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+  }
+  .dark .card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  /* ─── Input field ─── */
+  .input-field {
+    @apply w-full px-4 py-3
+           bg-white dark:bg-[#262626]
+           border border-black/[0.08] dark:border-white/[0.1]
+           rounded-xl
+           text-sm text-[#1a1a1a] dark:text-[#f0f0f0]
+           placeholder:text-gray-400 dark:placeholder:text-gray-500
+           outline-none
+           focus:border-accent-green/50 dark:focus:border-accent-green/50
+           focus:ring-2 focus:ring-accent-green/10
+           transition-all duration-200;
+  }
+
+  /* ─── Button primary ─── */
+  .btn-primary {
+    @apply px-6 py-2.5
+           bg-[#1a1a1a] dark:bg-white
+           text-white dark:text-[#1a1a1a]
+           rounded-xl
+           font-medium text-sm
+           hover:opacity-90
+           active:scale-[0.98]
+           disabled:opacity-40 disabled:cursor-not-allowed
            transition-all duration-150;
   }
-  .btn-brutal:hover {
-    @apply bg-terminal-green/10 border-terminal-green shadow-[0_0_12px_rgba(0,255,163,0.15)];
-  }
-  .btn-brutal:disabled {
-    @apply opacity-30 cursor-not-allowed border-terminal-dim text-terminal-dim;
-  }
-  .btn-brutal:disabled:hover {
-    @apply bg-transparent shadow-none;
+
+  /* ─── Button secondary ─── */
+  .btn-secondary {
+    @apply px-6 py-2.5
+           bg-transparent
+           border border-black/[0.1] dark:border-white/[0.12]
+           text-[#1a1a1a] dark:text-[#f0f0f0]
+           rounded-xl
+           font-medium text-sm
+           hover:bg-black/[0.03] dark:hover:bg-white/[0.05]
+           active:scale-[0.98]
+           disabled:opacity-40 disabled:cursor-not-allowed
+           transition-all duration-150;
   }
 
-  /* Toggle switch — brutalist style */
-  .toggle-brutal {
-    @apply relative w-10 h-5 border border-terminal-dim bg-transparent cursor-pointer transition-colors duration-200;
+  /* ─── Badge/pill ─── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5
+           rounded-full text-xs font-medium
+           bg-black/[0.05] dark:bg-white/[0.08]
+           text-content-secondary dark:text-content-dark-secondary;
   }
-  .toggle-brutal.active {
-    @apply border-terminal-green bg-terminal-green/10;
+  .badge-green {
+    @apply bg-accent-green/10 text-accent-green;
   }
-  .toggle-brutal .toggle-knob {
-    @apply absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-terminal-dim transition-all duration-200;
-  }
-  .toggle-brutal.active .toggle-knob {
-    @apply left-[calc(100%-18px)] bg-terminal-green;
+  .badge-purple {
+    @apply bg-accent-purple/10 text-accent-purple;
   }
 
-  /* Scan line overlay effect */
+  /* ─── Status indicators ─── */
+  .status-ok {
+    @apply text-accent-green font-semibold;
+  }
+  .status-pending {
+    @apply text-accent-orange font-semibold animate-pulse-slow;
+  }
+  .status-fail {
+    @apply text-accent-red font-semibold;
+  }
+  .status-info {
+    @apply text-content-secondary dark:text-content-dark-secondary;
+  }
+
+  /* ─── Floating prompt input ─── */
+  .prompt-bar {
+    @apply w-full max-w-3xl mx-auto
+           bg-white dark:bg-[#1e1e1e]
+           border border-black/[0.08] dark:border-white/[0.06]
+           rounded-2xl
+           transition-all duration-200;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+  }
+  .dark .prompt-bar {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .prompt-bar:focus-within {
+    @apply border-accent-green/20 dark:border-accent-green/20;
+    box-shadow: 0 12px 40px rgba(94,234,212,0.05);
+  }
+  .dark .prompt-bar:focus-within {
+    box-shadow: 0 8px 32px rgba(94,234,212,0.06);
+  }
+
+  /* ─── Model card ─── */
+  .model-card {
+    @apply p-3 rounded-xl cursor-pointer
+           border border-transparent
+           hover:bg-black/[0.03] dark:hover:bg-white/[0.04]
+           transition-all duration-150;
+  }
+  .model-card.active {
+    @apply bg-accent-green/5 dark:bg-accent-green/[0.07]
+           border-accent-green/15 dark:border-accent-green/20;
+  }
+
+  /* ─── Scan line overlay (kept for terminal feel, opt-in) ─── */
   .scan-line-overlay {
     pointer-events: none;
     position: fixed;
@@ -115,14 +239,18 @@
       rgba(0, 0, 0, 0.03) 2px,
       rgba(0, 0, 0, 0.03) 4px
     );
+    display: none; /* Hidden by default, opt-in */
   }
 }
 
 @layer utilities {
   .text-shadow-green {
-    text-shadow: 0 0 8px rgba(0, 255, 163, 0.3);
+    text-shadow: 0 0 8px rgba(0, 200, 150, 0.3);
   }
   .text-shadow-green-strong {
-    text-shadow: 0 0 12px rgba(0, 255, 163, 0.5), 0 0 24px rgba(0, 255, 163, 0.2);
+    text-shadow: 0 0 12px rgba(0, 200, 150, 0.5), 0 0 24px rgba(0, 200, 150, 0.2);
+  }
+  .glass {
+    @apply bg-white/60 dark:bg-[#1a1a1a]/60 backdrop-blur-xl;
   }
 }

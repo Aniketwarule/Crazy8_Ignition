@@ -1,95 +1,147 @@
-import { Link } from 'react-router-dom'
-import { Zap, Radio, LogOut, Wallet, Loader2, Rocket, Key } from 'lucide-react'
+import { useState } from 'react'
+import { Link, NavLink } from 'react-router-dom'
+import { Zap, LogOut, Wallet, Loader2, Sun, Moon, Menu, X } from 'lucide-react'
 import { usePeraWallet } from '../../hooks/usePeraWallet'
+import { useTheme } from '../../contexts/ThemeProvider'
 import { ellipseAddress } from '../../utils/ellipseAddress'
 
 export default function Header() {
   const { address, balance, isConnected, isConnecting, connect, disconnect } = usePeraWallet()
+  const { theme, toggleTheme } = useTheme()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-  const network = import.meta.env.VITE_ALGOD_NETWORK || 'localnet'
+  const navLinks = [
+    { to: '/home', label: 'Playground' },
+    { to: '/marketplace', label: 'Marketplace' },
+    { to: '/publish', label: 'Publish' },
+    { to: '/api-key', label: 'API Keys' },
+  ]
 
   return (
-    <header className="flex items-center justify-between px-5 py-3 border-b border-gray-700/60 bg-terminal-bg/95 backdrop-blur-sm z-50">
-      {/* ─── Left: Brand + Nav ─── */}
-      <div className="flex items-center gap-3">
-        <Zap className="w-4 h-4 text-terminal-green" strokeWidth={2.5} />
-        <h1 className="font-sans font-bold text-base tracking-[0.2em] text-white uppercase">
-          IGNITION
-        </h1>
-        <span className="text-gray-700 hidden sm:inline">|</span>
-        <span className="text-gray-500 text-xs font-mono hidden sm:inline">
-          /playground
+    <nav className="navbar-float">
+      <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-[#1a1a1a] dark:bg-white flex items-center justify-center">
+          <Zap className="w-3.5 h-3.5 text-white dark:text-[#1a1a1a]" strokeWidth={2.5} />
+        </div>
+        <span className="font-sans font-bold text-sm tracking-wide text-[#1a1a1a] dark:text-white hidden sm:inline">
+          Ignition
         </span>
-        <Link
-          to="/publish"
-          className="hidden sm:flex items-center gap-1 text-gray-500 hover:text-purple-400 text-xs font-mono transition-colors"
-        >
-          <Rocket className="w-3 h-3" />
-          /publish
-        </Link>
-        <Link
-          to="/api-key"
-          className="hidden sm:flex items-center gap-1 text-gray-500 hover:text-terminal-green text-xs font-mono transition-colors"
-        >
-          <Key className="w-3 h-3" />
-          /api-key
-        </Link>
+      </Link>
+
+      {/* ─── Desktop Nav Links ─── */}
+      <div className="hidden md:flex items-center gap-1">
+        {navLinks.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                isActive
+                  ? 'bg-[#1a1a1a]/[0.07] dark:bg-black text-[#1a1a1a] dark:text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-[#1a1a1a] dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
+              }`
+            }
+          >
+            {link.label}
+          </NavLink>
+        ))}
       </div>
 
-      {/* ─── Center: Network badge ─── */}
-      <div className="hidden md:flex items-center gap-2 px-3 py-1 border border-gray-700/50">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terminal-green opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-terminal-green" />
-        </span>
-        <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
-          {network}
-        </span>
-      </div>
-
-      {/* ─── Right: Wallet ─── */}
+      {/* ─── Right: Wallet + Theme + Mobile Toggle ─── */}
       <div className="flex items-center gap-2">
-        {isConnected && address ? (
-          <>
-            {/* Balance */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 border border-gray-700/50 text-xs font-mono text-gray-400">
-              <span className="text-terminal-green font-bold">{balance.toFixed(2)}</span>
-              <span className="text-gray-500">ALGO</span>
-            </div>
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-lg text-gray-400 hover:text-[#1a1a1a] dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-all"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
 
-            {/* Address */}
-            <div className="flex items-center gap-2 px-3 py-1.5 border border-terminal-green/20 bg-terminal-green/5">
-              <span className="w-1.5 h-1.5 rounded-full bg-terminal-green" />
-              <span className="text-xs font-mono text-terminal-green">
+        {/* Wallet */}
+        {isConnected && address ? (
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.06]">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-green" />
+              <span className="text-xs font-medium text-content dark:text-content-dark">
+                {balance.toFixed(2)} ALGO
+              </span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">
                 {ellipseAddress(address, 4)}
               </span>
             </div>
-
-            {/* Disconnect */}
             <button
               onClick={disconnect}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-red-500/20 text-red-400/70 hover:text-red-400 hover:border-red-500/50 hover:bg-red-500/5 transition-all duration-150 text-xs font-mono uppercase tracking-wider"
+              className="p-2 rounded-lg text-gray-400 hover:text-accent-red hover:bg-accent-red/5 transition-all"
+              title="Disconnect wallet"
             >
-              <LogOut className="w-3 h-3" />
-              <span className="hidden sm:inline">EXIT</span>
+              <LogOut className="w-4 h-4" />
             </button>
-          </>
+          </div>
         ) : (
           <button
             onClick={connect}
             disabled={isConnecting}
-            className="flex items-center gap-2 px-4 py-1.5 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/10 hover:border-terminal-green disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 text-xs font-mono uppercase tracking-wider group"
+            className="btn-primary flex items-center gap-2 !py-2 !px-4 !text-xs"
           >
             {isConnecting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Wallet className="w-3.5 h-3.5 group-hover:animate-pulse" />
+              <Wallet className="w-3.5 h-3.5" />
             )}
-            <span>{isConnecting ? 'CONNECTING...' : 'CONNECT PERA'}</span>
-            <Radio className="w-3 h-3 opacity-50" />
+            <span className="hidden sm:inline">{isConnecting ? 'Connecting...' : 'Connect'}</span>
           </button>
         )}
+
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-all"
+        >
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
       </div>
-    </header>
+
+      {/* ─── Mobile dropdown ─── */}
+      {mobileOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 p-3 rounded-2xl bg-white/90 dark:bg-[#1e1e1e]/95 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.05] md:hidden animate-fade-in" style={{ boxShadow: '0 12px 40px rgba(0,0,0,0.15)' }}>
+          <div className="flex flex-col gap-1">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={() => setMobileOpen(false)}
+                className={({ isActive }) =>
+                  `px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    isActive
+                      ? 'bg-[#1a1a1a]/[0.07] dark:bg-white/[0.1] text-[#1a1a1a] dark:text-white'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+            {/* Mobile wallet info */}
+            {isConnected && address && (
+              <div className="flex items-center justify-between px-4 py-2.5 mt-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.05]">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-green" />
+                  <span className="text-xs font-medium text-accent-green">
+                    {balance.toFixed(2)} ALGO
+                  </span>
+                </div>
+                <button
+                  onClick={disconnect}
+                  className="text-xs text-gray-400 hover:text-accent-red transition-colors"
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </nav>
   )
 }
