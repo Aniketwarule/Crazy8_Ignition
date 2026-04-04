@@ -18,7 +18,7 @@ export default function Header() {
   ]
 
   return (
-    <nav className="navbar-float">
+    <nav className="navbar-float backdrop-blur-lg">
       <Link to="/" className="flex items-center gap-2 flex-shrink-0">
         <div className="w-7 h-7 rounded-lg bg-[#1a1a1a] dark:bg-white flex items-center justify-center">
           <Zap className="w-3.5 h-3.5 text-white dark:text-[#1a1a1a]" strokeWidth={2.5} />
@@ -37,7 +37,7 @@ export default function Header() {
             className={({ isActive }) =>
               `px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#1a1a1a]/[0.07] dark:bg-black text-[#1a1a1a] dark:text-white'
+                  ? 'bg-black text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:text-[#1a1a1a] dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
               }`
             }

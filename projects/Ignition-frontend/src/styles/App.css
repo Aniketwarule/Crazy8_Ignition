@@ -71,15 +71,15 @@
   /* ─── Floating Navbar ─── */
   .navbar-float {
     @apply fixed top-4 left-1/2 -translate-x-1/2 z-50
-           flex items-center justify-between gap-4
-           px-5 py-2.5
-           rounded-2xl
-           bg-white/80 dark:bg-[#1e1e1e]/90
+           flex items-center justify-between
+           px-8 py-4
+           rounded-full
+           bg-white/20 dark:bg-[#1e1e1e]/20
            backdrop-blur-xl
            border border-black/[0.06] dark:border-white/[0.06]
            transition-all duration-300;
     box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-    width: min(calc(100% - 32px), 1200px);
+    width: min(calc(100% - 32px), 900px);
   }
   .dark .navbar-float {
     box-shadow: 0 8px 32px rgba(0,0,0,0.5);
@@ -219,8 +219,8 @@
            transition-all duration-150;
   }
   .model-card.active {
-    @apply bg-accent-green/5 dark:bg-accent-green/[0.07]
-           border-accent-green/15 dark:border-accent-green/20;
+    @apply bg-black/[0.05] dark:bg-[#141414]
+           border-black/[0.08] dark:border-white/[0.08];
   }
 
   /* ─── Scan line overlay (kept for terminal feel, opt-in) ─── */
