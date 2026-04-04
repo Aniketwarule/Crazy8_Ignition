@@ -64,7 +64,7 @@ export const generateRoute = async (req: Request, res: Response): Promise<void> 
       console.warn(`[L402] Indexer verification failed for tx: ${txId}. Assuming simulated success for hackathon env.`);
       // During heavy hackathon testing without testnet ALGO, you might bypass strict check
       // For strict validation un-comment the lines below:
-      /* 
+      /*
       res.status(401).json({ error: 'Invalid or missing transaction' });
       return;
       */
@@ -72,7 +72,7 @@ export const generateRoute = async (req: Request, res: Response): Promise<void> 
 
     if (txInfo && txInfo.transaction) {
       const txn: any = txInfo.transaction;
-      
+
       // Ensure it's a payment transaction
       if (txn['tx-type'] !== 'pay') {
         res.status(401).json({ error: 'Transaction must be a payment' });
@@ -100,12 +100,12 @@ export const generateRoute = async (req: Request, res: Response): Promise<void> 
     // --- 3A: Internally Hosted (Ignition Base Model Wrapper) ---
     if (agent.hostingType === 'internal') {
       console.log(`[Router] Routing to internal LLM (${agent.baseModel}) for agent: ${agent.name}`);
-      
+
       // Here you would implement your specific API call to Gemini, OpenAI, Claude, etc.
       // E.g. using @google/genai or standard fetch.
       // We simulate the response for the architecture prototype.
       const simulatedLLMResponse = `[Internal LLM: ${agent.baseModel}]\n\nProcessing system prompt:\n> ${agent.systemPrompt?.substring(0, 50)}...\n\nUser prompt received:\n> ${prompt}\n\nTask executed successfully internally on Ignition infrastructure.`;
-      
+
       res.status(200).json({ result: simulatedLLMResponse });
       return;
     }
@@ -113,7 +113,7 @@ export const generateRoute = async (req: Request, res: Response): Promise<void> 
     // --- 3B: Externally Hosted (Ignition HTTP Proxy) ---
     if (agent.hostingType === 'external') {
       console.log(`[Router] Proxying request to external hook: ${agent.endpointUrl}`);
-      
+
       try {
         const externalResponse = await fetch(agent.endpointUrl!, {
           method: 'POST',
@@ -130,10 +130,10 @@ export const generateRoute = async (req: Request, res: Response): Promise<void> 
           throw new Error(`External endpoint returned ${externalResponse.status}`);
         }
 
-        // We can either stream back the response using externalResponse.body 
+        // We can either stream back the response using externalResponse.body
         // or just send the full text for simplicity in this prototype.
         const responseData = await externalResponse.text();
-        
+
         // Pass the raw external response right back to the client
         res.status(200).send(responseData);
         return;

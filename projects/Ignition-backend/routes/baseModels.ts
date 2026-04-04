@@ -26,11 +26,9 @@ const resolveGeminiModel = (requestedModel: string): string => {
 
 const resolveGroqModel = (requestedModel: string): string => {
   const aliases: Record<string, string> = {
-    'gemini-1.5-pro': DEFAULT_GROQ_MODEL,
-    'gemini-1.5-pro-latest': DEFAULT_GROQ_MODEL,
     'gemini-2.0-flash': DEFAULT_GROQ_MODEL,
-    'gpt-4o': 'llama-3.1-70b-versatile',
-    'claude-3-opus': 'llama-3.1-70b-versatile',
+    'gpt-4o': DEFAULT_GROQ_MODEL,
+    'claude-3-opus': DEFAULT_GROQ_MODEL,
   };
 
   return aliases[requestedModel] || requestedModel;

@@ -22,7 +22,7 @@
   }
 
   body {
-    background-color: #0A0A0A;
+    background-color: #070B11;
     color: #E0E0E0;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     overflow: hidden;
@@ -50,6 +50,19 @@
 }
 
 @layer components {
+  .app-shell {
+    background:
+      radial-gradient(1200px 600px at 12% -10%, rgba(0, 255, 163, 0.10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(0, 212, 170, 0.07), transparent 62%),
+      linear-gradient(180deg, #070B11 0%, #0A0F15 100%);
+  }
+
+  .glass-surface {
+    background: rgba(9, 13, 20, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(10px);
+  }
+
   /* Terminal window chrome dots */
   .terminal-dot {
     @apply w-2.5 h-2.5 rounded-full;
@@ -112,8 +125,8 @@
       0deg,
       transparent,
       transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
+      rgba(255, 255, 255, 0.012) 2px,
+      rgba(255, 255, 255, 0.012) 4px
     );
   }
 }

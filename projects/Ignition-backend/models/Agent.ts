@@ -7,8 +7,8 @@ export interface IAgent extends Document {
   priceAlgo: number;
   creatorWallet: string;
   hostingType: 'internal' | 'external';
-  baseModel?: string;      
-  systemPrompt?: string;   
+  baseModel?: string;
+  systemPrompt?: string;
   endpointUrl?: string;
   APIkey?: string;
 }
@@ -20,27 +20,27 @@ const AgentSchema: Schema = new Schema({
   priceAlgo: { type: Number, required: true },
   creatorWallet: { type: String, required: true, index: true },
   hostingType: { type: String, enum: ['internal', 'external'], required: true },
-  baseModel: { 
-    type: String, 
-    required: function(this: any) { return this.hostingType === 'internal'; } 
+  baseModel: {
+    type: String,
+    required: function(this: any) { return this.hostingType === 'internal'; }
   },
-  systemPrompt: { 
-    type: String, 
-    required: function(this: any) { return this.hostingType === 'internal'; } 
+  systemPrompt: {
+    type: String,
+    required: function(this: any) { return this.hostingType === 'internal'; }
   },
-  endpointUrl: { 
-    type: String, 
+  endpointUrl: {
+    type: String,
     validate: {
         validator: function(v: string) {
         return /^https?:\/\/.+/.test(v);
       },
       message: "Invalid URL"
     },
-    required: function(this: any) { return this.hostingType === 'external'; } 
+    required: function(this: any) { return this.hostingType === 'external'; }
   },
-  APIkey: { 
-    type: String, 
-    required: function(this: any) { return this.hostingType === 'internal'; } 
+  APIkey: {
+    type: String,
+    required: function(this: any) { return this.hostingType === 'internal'; }
   }
 }, { timestamps: true });
 
@@ -51,4 +51,4 @@ AgentSchema.pre('save', function(this: any, next: any) {
 });
 
 
-export default mongoose.models.Agent || mongoose.model<IAgent>('Agent', AgentSchema); 
+export default mongoose.models.Agent || mongoose.model<IAgent>('Agent', AgentSchema);

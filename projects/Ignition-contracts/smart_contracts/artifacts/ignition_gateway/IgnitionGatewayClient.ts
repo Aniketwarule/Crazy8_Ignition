@@ -23,7 +23,7 @@ import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgumen
 import { SendParams, SendSingleTransactionResult, SendAtomicTransactionComposerResults } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address, encodeAddress, modelsv2, OnApplicationComplete, Transaction, TransactionSigner } from 'algosdk'
 
-export const APP_SPEC: Arc56Contract = {"name":"IgnitionGateway","structs":{},"methods":[{"name":"createApplication","args":[],"returns":{"type":"void"},"actions":{"create":["NoOp"],"call":[]},"readonly":false,"events":[],"recommendations":{}},{"name":"payForAi","args":[{"type":"pay","name":"payTxn"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}}],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":1,"bytes":1},"local":{"ints":0,"bytes":0}},"keys":{"global":{"treasuryAddress":{"keyType":"AVMString","valueType":"address","key":"dHJlYXN1cnlfYWRkcmVzcw=="},"baseModelPrice":{"keyType":"AVMString","valueType":"AVMUint64","key":"YmFzZV9tb2RlbF9wcmljZQ=="}},"local":{},"box":{}},"maps":{"global":{},"local":{},"box":{}}},"bareActions":{"create":[],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[{"pc":[116],"errorMessage":"Insufficient payment amount"},{"pc":[108],"errorMessage":"Invalid treasury receiver"},{"pc":[44],"errorMessage":"OnCompletion must be NoOp"},{"pc":[106,114],"errorMessage":"check GlobalState exists"},{"pc":[99],"errorMessage":"transaction type is pay"}],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBpbnRjYmxvY2sgMSAwCiAgICBieXRlY2Jsb2NrICJ0cmVhc3VyeV9hZGRyZXNzIiAiYmFzZV9tb2RlbF9wcmljZSIKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjEzCiAgICAvLyBleHBvcnQgY2xhc3MgSWduaXRpb25HYXRld2F5IGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgYXNzZXJ0IC8vIE9uQ29tcGxldGlvbiBtdXN0IGJlIE5vT3AKICAgIHR4biBBcHBsaWNhdGlvbklECiAgICBieiBtYWluX2NyZWF0ZV9Ob09wQDUKICAgIHB1c2hieXRlcyAweGI5OTRkNDJjIC8vIG1ldGhvZCAicGF5Rm9yQWkocGF5KXZvaWQiCiAgICB0eG5hIEFwcGxpY2F0aW9uQXJncyAwCiAgICBtYXRjaCBwYXlGb3JBaQogICAgZXJyCgptYWluX2NyZWF0ZV9Ob09wQDU6CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoxMwogICAgLy8gZXhwb3J0IGNsYXNzIElnbml0aW9uR2F0ZXdheSBleHRlbmRzIENvbnRyYWN0IHsKICAgIHB1c2hieXRlcyAweGI4NDQ3YjM2IC8vIG1ldGhvZCAiY3JlYXRlQXBwbGljYXRpb24oKXZvaWQiCiAgICB0eG5hIEFwcGxpY2F0aW9uQXJncyAwCiAgICBtYXRjaCBjcmVhdGVBcHBsaWNhdGlvbgogICAgZXJyCgoKLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6Oklnbml0aW9uR2F0ZXdheS5jcmVhdGVBcHBsaWNhdGlvbltyb3V0aW5nXSgpIC0+IHZvaWQ6CmNyZWF0ZUFwcGxpY2F0aW9uOgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTQKICAgIC8vIHRyZWFzdXJ5QWRkcmVzcyA9IEdsb2JhbFN0YXRlPEFjY291bnQ+KHsga2V5OiAndHJlYXN1cnlfYWRkcmVzcycgfSkKICAgIGJ5dGVjXzAgLy8gInRyZWFzdXJ5X2FkZHJlc3MiCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoxOAogICAgLy8gdGhpcy50cmVhc3VyeUFkZHJlc3MudmFsdWUgPSBUeG4uc2VuZGVyCiAgICB0eG4gU2VuZGVyCiAgICBhcHBfZ2xvYmFsX3B1dAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTUKICAgIC8vIGJhc2VNb2RlbFByaWNlID0gR2xvYmFsU3RhdGU8dWludDY0Pih7IGtleTogJ2Jhc2VfbW9kZWxfcHJpY2UnIH0pCiAgICBieXRlY18xIC8vICJiYXNlX21vZGVsX3ByaWNlIgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTkKICAgIC8vIHRoaXMuYmFzZU1vZGVsUHJpY2UudmFsdWUgPSBVaW50NjQoMTAwXzAwMCkKICAgIHB1c2hpbnQgMTAwMDAwIC8vIDEwMDAwMAogICAgYXBwX2dsb2JhbF9wdXQKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjE3CiAgICAvLyBwdWJsaWMgY3JlYXRlQXBwbGljYXRpb24oKTogdm9pZCB7CiAgICBpbnRjXzAgLy8gMQogICAgcmV0dXJuCgoKLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6Oklnbml0aW9uR2F0ZXdheS5wYXlGb3JBaVtyb3V0aW5nXSgpIC0+IHZvaWQ6CnBheUZvckFpOgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MjIKICAgIC8vIHB1YmxpYyBwYXlGb3JBaShwYXlUeG46IGd0eG4uUGF5bWVudFR4bik6IHZvaWQgewogICAgdHhuIEdyb3VwSW5kZXgKICAgIGludGNfMCAvLyAxCiAgICAtCiAgICBkdXAKICAgIGd0eG5zIFR5cGVFbnVtCiAgICBpbnRjXzAgLy8gcGF5CiAgICA9PQogICAgYXNzZXJ0IC8vIHRyYW5zYWN0aW9uIHR5cGUgaXMgcGF5CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoyMwogICAgLy8gYXNzZXJ0KHBheVR4bi5yZWNlaXZlciA9PT0gdGhpcy50cmVhc3VyeUFkZHJlc3MudmFsdWUsICdJbnZhbGlkIHRyZWFzdXJ5IHJlY2VpdmVyJykKICAgIGR1cAogICAgZ3R4bnMgUmVjZWl2ZXIKICAgIGludGNfMSAvLyAwCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoxNAogICAgLy8gdHJlYXN1cnlBZGRyZXNzID0gR2xvYmFsU3RhdGU8QWNjb3VudD4oeyBrZXk6ICd0cmVhc3VyeV9hZGRyZXNzJyB9KQogICAgYnl0ZWNfMCAvLyAidHJlYXN1cnlfYWRkcmVzcyIKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjIzCiAgICAvLyBhc3NlcnQocGF5VHhuLnJlY2VpdmVyID09PSB0aGlzLnRyZWFzdXJ5QWRkcmVzcy52YWx1ZSwgJ0ludmFsaWQgdHJlYXN1cnkgcmVjZWl2ZXInKQogICAgYXBwX2dsb2JhbF9nZXRfZXgKICAgIGFzc2VydCAvLyBjaGVjayBHbG9iYWxTdGF0ZSBleGlzdHMKICAgID09CiAgICBhc3NlcnQgLy8gSW52YWxpZCB0cmVhc3VyeSByZWNlaXZlcgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MjQKICAgIC8vIGFzc2VydChwYXlUeG4uYW1vdW50ID49IHRoaXMuYmFzZU1vZGVsUHJpY2UudmFsdWUsICdJbnN1ZmZpY2llbnQgcGF5bWVudCBhbW91bnQnKQogICAgZ3R4bnMgQW1vdW50CiAgICBpbnRjXzEgLy8gMAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTUKICAgIC8vIGJhc2VNb2RlbFByaWNlID0gR2xvYmFsU3RhdGU8dWludDY0Pih7IGtleTogJ2Jhc2VfbW9kZWxfcHJpY2UnIH0pCiAgICBieXRlY18xIC8vICJiYXNlX21vZGVsX3ByaWNlIgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MjQKICAgIC8vIGFzc2VydChwYXlUeG4uYW1vdW50ID49IHRoaXMuYmFzZU1vZGVsUHJpY2UudmFsdWUsICdJbnN1ZmZpY2llbnQgcGF5bWVudCBhbW91bnQnKQogICAgYXBwX2dsb2JhbF9nZXRfZXgKICAgIGFzc2VydCAvLyBjaGVjayBHbG9iYWxTdGF0ZSBleGlzdHMKICAgID49CiAgICBhc3NlcnQgLy8gSW5zdWZmaWNpZW50IHBheW1lbnQgYW1vdW50CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoyNgogICAgLy8gbG9nKCdQQUlEX0JBU0VfTU9ERUwnKQogICAgcHVzaGJ5dGVzICJQQUlEX0JBU0VfTU9ERUwiCiAgICBsb2cKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjIyCiAgICAvLyBwdWJsaWMgcGF5Rm9yQWkocGF5VHhuOiBndHhuLlBheW1lbnRUeG4pOiB2b2lkIHsKICAgIGludGNfMCAvLyAxCiAgICByZXR1cm4K","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg=="},"byteCode":{"approval":"CyACAQAmAhB0cmVhc3VyeV9hZGRyZXNzEGJhc2VfbW9kZWxfcHJpY2UxGRREMRhBAA6ABLmU1Cw2GgCOAQAbAIAEuER7NjYaAI4BAAEAKDEAZymBoI0GZyJDMRYiCUk4ECISREk4ByMoZUQSRDgIIyllRA9EgA9QQUlEX0JBU0VfTU9ERUywIkM=","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
+export const APP_SPEC: Arc56Contract = {"name":"IgnitionGateway","structs":{},"methods":[{"name":"createApplication","args":[],"returns":{"type":"void"},"actions":{"create":["NoOp"],"call":[]},"readonly":false,"events":[],"recommendations":{}},{"name":"payForAi","args":[{"type":"pay","name":"payTxn"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}},{"name":"payForGemini","args":[{"type":"pay","name":"payTxn"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}},{"name":"payForGpt4o","args":[{"type":"pay","name":"payTxn"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}},{"name":"payForClaudeOpus","args":[{"type":"pay","name":"payTxn"}],"returns":{"type":"void"},"actions":{"create":[],"call":["NoOp"]},"readonly":false,"events":[],"recommendations":{}}],"arcs":[22,28],"networks":{},"state":{"schema":{"global":{"ints":3,"bytes":1},"local":{"ints":0,"bytes":0}},"keys":{"global":{"treasuryAddress":{"keyType":"AVMString","valueType":"address","key":"dHJlYXN1cnlfYWRkcmVzcw=="},"geminiPrice":{"keyType":"AVMString","valueType":"AVMUint64","key":"Z2VtaW5pX3ByaWNl"},"gptPrice":{"keyType":"AVMString","valueType":"AVMUint64","key":"Z3B0X3ByaWNl"},"claudePrice":{"keyType":"AVMString","valueType":"AVMUint64","key":"Y2xhdWRlX3ByaWNl"}},"local":{},"box":{}},"maps":{"global":{},"local":{},"box":{}}},"bareActions":{"create":[],"call":[]},"sourceInfo":{"approval":{"sourceInfo":[{"pc":[265],"errorMessage":"Insufficient payment amount"},{"pc":[257],"errorMessage":"Invalid treasury receiver"},{"pc":[79],"errorMessage":"OnCompletion must be NoOp"},{"pc":[173,194,215,237,255],"errorMessage":"check GlobalState exists"},{"pc":[169,190,211,232],"errorMessage":"transaction type is pay"}],"pcOffsetMethod":"none"},"clear":{"sourceInfo":[],"pcOffsetMethod":"none"}},"source":{"approval":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBpbnRjYmxvY2sgMSAwCiAgICBieXRlY2Jsb2NrICJQQUlEX0JBU0VfTU9ERUwiICJnZW1pbmlfcHJpY2UiICJ0cmVhc3VyeV9hZGRyZXNzIiAiZ3B0X3ByaWNlIiAiY2xhdWRlX3ByaWNlIgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTMKICAgIC8vIGV4cG9ydCBjbGFzcyBJZ25pdGlvbkdhdGV3YXkgZXh0ZW5kcyBDb250cmFjdCB7CiAgICB0eG4gT25Db21wbGV0aW9uCiAgICAhCiAgICBhc3NlcnQgLy8gT25Db21wbGV0aW9uIG11c3QgYmUgTm9PcAogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgIGJ6IG1haW5fY3JlYXRlX05vT3BAOAogICAgcHVzaGJ5dGVzcyAweGI5OTRkNDJjIDB4Y2I0NjYwNGIgMHgyOGViYjM0MyAweDdmNDZhNDk0IC8vIG1ldGhvZCAicGF5Rm9yQWkocGF5KXZvaWQiLCBtZXRob2QgInBheUZvckdlbWluaShwYXkpdm9pZCIsIG1ldGhvZCAicGF5Rm9yR3B0NG8ocGF5KXZvaWQiLCBtZXRob2QgInBheUZvckNsYXVkZU9wdXMocGF5KXZvaWQiCiAgICB0eG5hIEFwcGxpY2F0aW9uQXJncyAwCiAgICBtYXRjaCBwYXlGb3JBaSBwYXlGb3JHZW1pbmkgcGF5Rm9yR3B0NG8gcGF5Rm9yQ2xhdWRlT3B1cwogICAgZXJyCgptYWluX2NyZWF0ZV9Ob09wQDg6CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoxMwogICAgLy8gZXhwb3J0IGNsYXNzIElnbml0aW9uR2F0ZXdheSBleHRlbmRzIENvbnRyYWN0IHsKICAgIHB1c2hieXRlcyAweGI4NDQ3YjM2IC8vIG1ldGhvZCAiY3JlYXRlQXBwbGljYXRpb24oKXZvaWQiCiAgICB0eG5hIEFwcGxpY2F0aW9uQXJncyAwCiAgICBtYXRjaCBjcmVhdGVBcHBsaWNhdGlvbgogICAgZXJyCgoKLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6Oklnbml0aW9uR2F0ZXdheS5jcmVhdGVBcHBsaWNhdGlvbltyb3V0aW5nXSgpIC0+IHZvaWQ6CmNyZWF0ZUFwcGxpY2F0aW9uOgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTQKICAgIC8vIHRyZWFzdXJ5QWRkcmVzcyA9IEdsb2JhbFN0YXRlPEFjY291bnQ+KHsga2V5OiAndHJlYXN1cnlfYWRkcmVzcycgfSkKICAgIGJ5dGVjXzIgLy8gInRyZWFzdXJ5X2FkZHJlc3MiCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoyMAogICAgLy8gdGhpcy50cmVhc3VyeUFkZHJlc3MudmFsdWUgPSBUeG4uc2VuZGVyCiAgICB0eG4gU2VuZGVyCiAgICBhcHBfZ2xvYmFsX3B1dAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTUKICAgIC8vIGdlbWluaVByaWNlID0gR2xvYmFsU3RhdGU8dWludDY0Pih7IGtleTogJ2dlbWluaV9wcmljZScgfSkKICAgIGJ5dGVjXzEgLy8gImdlbWluaV9wcmljZSIKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjIxCiAgICAvLyB0aGlzLmdlbWluaVByaWNlLnZhbHVlID0gVWludDY0KDEwMF8wMDApCiAgICBwdXNoaW50IDEwMDAwMCAvLyAxMDAwMDAKICAgIGFwcF9nbG9iYWxfcHV0CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoxNgogICAgLy8gZ3B0UHJpY2UgPSBHbG9iYWxTdGF0ZTx1aW50NjQ+KHsga2V5OiAnZ3B0X3ByaWNlJyB9KQogICAgYnl0ZWNfMyAvLyAiZ3B0X3ByaWNlIgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MjIKICAgIC8vIHRoaXMuZ3B0UHJpY2UudmFsdWUgPSBVaW50NjQoNDAwXzAwMCkKICAgIHB1c2hpbnQgNDAwMDAwIC8vIDQwMDAwMAogICAgYXBwX2dsb2JhbF9wdXQKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjE3CiAgICAvLyBjbGF1ZGVQcmljZSA9IEdsb2JhbFN0YXRlPHVpbnQ2ND4oeyBrZXk6ICdjbGF1ZGVfcHJpY2UnIH0pCiAgICBieXRlYyA0IC8vICJjbGF1ZGVfcHJpY2UiCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoyMwogICAgLy8gdGhpcy5jbGF1ZGVQcmljZS52YWx1ZSA9IFVpbnQ2NCg4MDBfMDAwKQogICAgcHVzaGludCA4MDAwMDAgLy8gODAwMDAwCiAgICBhcHBfZ2xvYmFsX3B1dAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTkKICAgIC8vIHB1YmxpYyBjcmVhdGVBcHBsaWNhdGlvbigpOiB2b2lkIHsKICAgIGludGNfMCAvLyAxCiAgICByZXR1cm4KCgovLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo6SWduaXRpb25HYXRld2F5LnBheUZvckFpW3JvdXRpbmddKCkgLT4gdm9pZDoKcGF5Rm9yQWk6CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czozMgogICAgLy8gcHVibGljIHBheUZvckFpKHBheVR4bjogZ3R4bi5QYXltZW50VHhuKTogdm9pZCB7CiAgICB0eG4gR3JvdXBJbmRleAogICAgaW50Y18wIC8vIDEKICAgIC0KICAgIGR1cAogICAgZ3R4bnMgVHlwZUVudW0KICAgIGludGNfMCAvLyBwYXkKICAgID09CiAgICBhc3NlcnQgLy8gdHJhbnNhY3Rpb24gdHlwZSBpcyBwYXkKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjMzCiAgICAvLyB0aGlzLmFzc2VydFRyZWFzdXJ5UGF5bWVudChwYXlUeG4sIHRoaXMuZ2VtaW5pUHJpY2UudmFsdWUpCiAgICBpbnRjXzEgLy8gMAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTUKICAgIC8vIGdlbWluaVByaWNlID0gR2xvYmFsU3RhdGU8dWludDY0Pih7IGtleTogJ2dlbWluaV9wcmljZScgfSkKICAgIGJ5dGVjXzEgLy8gImdlbWluaV9wcmljZSIKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjMzCiAgICAvLyB0aGlzLmFzc2VydFRyZWFzdXJ5UGF5bWVudChwYXlUeG4sIHRoaXMuZ2VtaW5pUHJpY2UudmFsdWUpCiAgICBhcHBfZ2xvYmFsX2dldF9leAogICAgYXNzZXJ0IC8vIGNoZWNrIEdsb2JhbFN0YXRlIGV4aXN0cwogICAgY2FsbHN1YiBhc3NlcnRUcmVhc3VyeVBheW1lbnQKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjM0CiAgICAvLyBsb2coJ1BBSURfQkFTRV9NT0RFTCcpCiAgICBieXRlY18wIC8vICJQQUlEX0JBU0VfTU9ERUwiCiAgICBsb2cKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjMyCiAgICAvLyBwdWJsaWMgcGF5Rm9yQWkocGF5VHhuOiBndHhuLlBheW1lbnRUeG4pOiB2b2lkIHsKICAgIGludGNfMCAvLyAxCiAgICByZXR1cm4KCgovLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo6SWduaXRpb25HYXRld2F5LnBheUZvckdlbWluaVtyb3V0aW5nXSgpIC0+IHZvaWQ6CnBheUZvckdlbWluaToKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjM3CiAgICAvLyBwdWJsaWMgcGF5Rm9yR2VtaW5pKHBheVR4bjogZ3R4bi5QYXltZW50VHhuKTogdm9pZCB7CiAgICB0eG4gR3JvdXBJbmRleAogICAgaW50Y18wIC8vIDEKICAgIC0KICAgIGR1cAogICAgZ3R4bnMgVHlwZUVudW0KICAgIGludGNfMCAvLyBwYXkKICAgID09CiAgICBhc3NlcnQgLy8gdHJhbnNhY3Rpb24gdHlwZSBpcyBwYXkKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjM4CiAgICAvLyB0aGlzLmFzc2VydFRyZWFzdXJ5UGF5bWVudChwYXlUeG4sIHRoaXMuZ2VtaW5pUHJpY2UudmFsdWUpCiAgICBpbnRjXzEgLy8gMAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTUKICAgIC8vIGdlbWluaVByaWNlID0gR2xvYmFsU3RhdGU8dWludDY0Pih7IGtleTogJ2dlbWluaV9wcmljZScgfSkKICAgIGJ5dGVjXzEgLy8gImdlbWluaV9wcmljZSIKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjM4CiAgICAvLyB0aGlzLmFzc2VydFRyZWFzdXJ5UGF5bWVudChwYXlUeG4sIHRoaXMuZ2VtaW5pUHJpY2UudmFsdWUpCiAgICBhcHBfZ2xvYmFsX2dldF9leAogICAgYXNzZXJ0IC8vIGNoZWNrIEdsb2JhbFN0YXRlIGV4aXN0cwogICAgY2FsbHN1YiBhc3NlcnRUcmVhc3VyeVBheW1lbnQKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjM5CiAgICAvLyBsb2coJ1BBSURfQkFTRV9NT0RFTCcpCiAgICBieXRlY18wIC8vICJQQUlEX0JBU0VfTU9ERUwiCiAgICBsb2cKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjM3CiAgICAvLyBwdWJsaWMgcGF5Rm9yR2VtaW5pKHBheVR4bjogZ3R4bi5QYXltZW50VHhuKTogdm9pZCB7CiAgICBpbnRjXzAgLy8gMQogICAgcmV0dXJuCgoKLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6Oklnbml0aW9uR2F0ZXdheS5wYXlGb3JHcHQ0b1tyb3V0aW5nXSgpIC0+IHZvaWQ6CnBheUZvckdwdDRvOgogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6NDIKICAgIC8vIHB1YmxpYyBwYXlGb3JHcHQ0byhwYXlUeG46IGd0eG4uUGF5bWVudFR4bik6IHZvaWQgewogICAgdHhuIEdyb3VwSW5kZXgKICAgIGludGNfMCAvLyAxCiAgICAtCiAgICBkdXAKICAgIGd0eG5zIFR5cGVFbnVtCiAgICBpbnRjXzAgLy8gcGF5CiAgICA9PQogICAgYXNzZXJ0IC8vIHRyYW5zYWN0aW9uIHR5cGUgaXMgcGF5CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0MwogICAgLy8gdGhpcy5hc3NlcnRUcmVhc3VyeVBheW1lbnQocGF5VHhuLCB0aGlzLmdwdFByaWNlLnZhbHVlKQogICAgaW50Y18xIC8vIDAKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjE2CiAgICAvLyBncHRQcmljZSA9IEdsb2JhbFN0YXRlPHVpbnQ2ND4oeyBrZXk6ICdncHRfcHJpY2UnIH0pCiAgICBieXRlY18zIC8vICJncHRfcHJpY2UiCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0MwogICAgLy8gdGhpcy5hc3NlcnRUcmVhc3VyeVBheW1lbnQocGF5VHhuLCB0aGlzLmdwdFByaWNlLnZhbHVlKQogICAgYXBwX2dsb2JhbF9nZXRfZXgKICAgIGFzc2VydCAvLyBjaGVjayBHbG9iYWxTdGF0ZSBleGlzdHMKICAgIGNhbGxzdWIgYXNzZXJ0VHJlYXN1cnlQYXltZW50CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0NAogICAgLy8gbG9nKCdQQUlEX0JBU0VfTU9ERUwnKQogICAgYnl0ZWNfMCAvLyAiUEFJRF9CQVNFX01PREVMIgogICAgbG9nCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0MgogICAgLy8gcHVibGljIHBheUZvckdwdDRvKHBheVR4bjogZ3R4bi5QYXltZW50VHhuKTogdm9pZCB7CiAgICBpbnRjXzAgLy8gMQogICAgcmV0dXJuCgoKLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6Oklnbml0aW9uR2F0ZXdheS5wYXlGb3JDbGF1ZGVPcHVzW3JvdXRpbmddKCkgLT4gdm9pZDoKcGF5Rm9yQ2xhdWRlT3B1czoKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjQ3CiAgICAvLyBwdWJsaWMgcGF5Rm9yQ2xhdWRlT3B1cyhwYXlUeG46IGd0eG4uUGF5bWVudFR4bik6IHZvaWQgewogICAgdHhuIEdyb3VwSW5kZXgKICAgIGludGNfMCAvLyAxCiAgICAtCiAgICBkdXAKICAgIGd0eG5zIFR5cGVFbnVtCiAgICBpbnRjXzAgLy8gcGF5CiAgICA9PQogICAgYXNzZXJ0IC8vIHRyYW5zYWN0aW9uIHR5cGUgaXMgcGF5CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0OAogICAgLy8gdGhpcy5hc3NlcnRUcmVhc3VyeVBheW1lbnQocGF5VHhuLCB0aGlzLmNsYXVkZVByaWNlLnZhbHVlKQogICAgaW50Y18xIC8vIDAKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjE3CiAgICAvLyBjbGF1ZGVQcmljZSA9IEdsb2JhbFN0YXRlPHVpbnQ2ND4oeyBrZXk6ICdjbGF1ZGVfcHJpY2UnIH0pCiAgICBieXRlYyA0IC8vICJjbGF1ZGVfcHJpY2UiCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0OAogICAgLy8gdGhpcy5hc3NlcnRUcmVhc3VyeVBheW1lbnQocGF5VHhuLCB0aGlzLmNsYXVkZVByaWNlLnZhbHVlKQogICAgYXBwX2dsb2JhbF9nZXRfZXgKICAgIGFzc2VydCAvLyBjaGVjayBHbG9iYWxTdGF0ZSBleGlzdHMKICAgIGNhbGxzdWIgYXNzZXJ0VHJlYXN1cnlQYXltZW50CiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0OQogICAgLy8gbG9nKCdQQUlEX0JBU0VfTU9ERUwnKQogICAgYnl0ZWNfMCAvLyAiUEFJRF9CQVNFX01PREVMIgogICAgbG9nCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo0NwogICAgLy8gcHVibGljIHBheUZvckNsYXVkZU9wdXMocGF5VHhuOiBndHhuLlBheW1lbnRUeG4pOiB2b2lkIHsKICAgIGludGNfMCAvLyAxCiAgICByZXR1cm4KCgovLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czo6SWduaXRpb25HYXRld2F5LmFzc2VydFRyZWFzdXJ5UGF5bWVudChwYXlUeG46IHVpbnQ2NCwgbWluQW1vdW50OiB1aW50NjQpIC0+IHZvaWQ6CmFzc2VydFRyZWFzdXJ5UGF5bWVudDoKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjI2CiAgICAvLyBwcml2YXRlIGFzc2VydFRyZWFzdXJ5UGF5bWVudChwYXlUeG46IGd0eG4uUGF5bWVudFR4biwgbWluQW1vdW50OiB1aW50NjQpOiB2b2lkIHsKICAgIHByb3RvIDIgMAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MjcKICAgIC8vIGFzc2VydChwYXlUeG4ucmVjZWl2ZXIgPT09IHRoaXMudHJlYXN1cnlBZGRyZXNzLnZhbHVlLCAnSW52YWxpZCB0cmVhc3VyeSByZWNlaXZlcicpCiAgICBmcmFtZV9kaWcgLTIKICAgIGd0eG5zIFJlY2VpdmVyCiAgICBpbnRjXzEgLy8gMAogICAgLy8gc21hcnRfY29udHJhY3RzL2lnbml0aW9uX2dhdGV3YXkvSWduaXRpb25HYXRld2F5LmFsZ28udHM6MTQKICAgIC8vIHRyZWFzdXJ5QWRkcmVzcyA9IEdsb2JhbFN0YXRlPEFjY291bnQ+KHsga2V5OiAndHJlYXN1cnlfYWRkcmVzcycgfSkKICAgIGJ5dGVjXzIgLy8gInRyZWFzdXJ5X2FkZHJlc3MiCiAgICAvLyBzbWFydF9jb250cmFjdHMvaWduaXRpb25fZ2F0ZXdheS9JZ25pdGlvbkdhdGV3YXkuYWxnby50czoyNwogICAgLy8gYXNzZXJ0KHBheVR4bi5yZWNlaXZlciA9PT0gdGhpcy50cmVhc3VyeUFkZHJlc3MudmFsdWUsICdJbnZhbGlkIHRyZWFzdXJ5IHJlY2VpdmVyJykKICAgIGFwcF9nbG9iYWxfZ2V0X2V4CiAgICBhc3NlcnQgLy8gY2hlY2sgR2xvYmFsU3RhdGUgZXhpc3RzCiAgICA9PQogICAgYXNzZXJ0IC8vIEludmFsaWQgdHJlYXN1cnkgcmVjZWl2ZXIKICAgIC8vIHNtYXJ0X2NvbnRyYWN0cy9pZ25pdGlvbl9nYXRld2F5L0lnbml0aW9uR2F0ZXdheS5hbGdvLnRzOjI4CiAgICAvLyBhc3NlcnQocGF5VHhuLmFtb3VudCA+PSBtaW5BbW91bnQsICdJbnN1ZmZpY2llbnQgcGF5bWVudCBhbW91bnQnKQogICAgZnJhbWVfZGlnIC0yCiAgICBndHhucyBBbW91bnQKICAgIGZyYW1lX2RpZyAtMQogICAgPj0KICAgIGFzc2VydCAvLyBJbnN1ZmZpY2llbnQgcGF5bWVudCBhbW91bnQKICAgIHJldHN1Ygo=","clear":"I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg=="},"byteCode":{"approval":"CyACAQAmBQ9QQUlEX0JBU0VfTU9ERUwMZ2VtaW5pX3ByaWNlEHRyZWFzdXJ5X2FkZHJlc3MJZ3B0X3ByaWNlDGNsYXVkZV9wcmljZTEZFEQxGEEAJIIEBLmU1CwEy0ZgSwQo67NDBH9GpJQ2GgCOBAAoAD0AUgBnAIAEuER7NjYaAI4BAAEAKjEAZymBoI0GZyuBgLUYZycEgYDqMGciQzEWIglJOBAiEkQjKWVEiABEKLAiQzEWIglJOBAiEkQjKWVEiAAvKLAiQzEWIglJOBAiEkQjK2VEiAAaKLAiQzEWIglJOBAiEkQjJwRlRIgABCiwIkOKAgCL/jgHIyplRBJEi/44CIv/D0SJ","clear":"C4EBQw=="},"events":[],"templateVariables":{}} as unknown as Arc56Contract
 
 /**
  * A state record containing binary data
@@ -74,6 +74,15 @@ export type IgnitionGatewayArgs = {
     'payForAi(pay)void': {
       payTxn: AppMethodCallTransactionArgument
     }
+    'payForGemini(pay)void': {
+      payTxn: AppMethodCallTransactionArgument
+    }
+    'payForGpt4o(pay)void': {
+      payTxn: AppMethodCallTransactionArgument
+    }
+    'payForClaudeOpus(pay)void': {
+      payTxn: AppMethodCallTransactionArgument
+    }
   }
   /**
    * The tuple representation of the arguments for each method
@@ -81,6 +90,9 @@ export type IgnitionGatewayArgs = {
   tuple: {
     'createApplication()void': []
     'payForAi(pay)void': [payTxn: AppMethodCallTransactionArgument]
+    'payForGemini(pay)void': [payTxn: AppMethodCallTransactionArgument]
+    'payForGpt4o(pay)void': [payTxn: AppMethodCallTransactionArgument]
+    'payForClaudeOpus(pay)void': [payTxn: AppMethodCallTransactionArgument]
   }
 }
 
@@ -90,6 +102,9 @@ export type IgnitionGatewayArgs = {
 export type IgnitionGatewayReturns = {
   'createApplication()void': void
   'payForAi(pay)void': void
+  'payForGemini(pay)void': void
+  'payForGpt4o(pay)void': void
+  'payForClaudeOpus(pay)void': void
 }
 
 /**
@@ -110,6 +125,21 @@ export type IgnitionGatewayTypes = {
       argsTuple: IgnitionGatewayArgs['tuple']['payForAi(pay)void']
       returns: IgnitionGatewayReturns['payForAi(pay)void']
     }>
+    & Record<'payForGemini(pay)void' | 'payForGemini', {
+      argsObj: IgnitionGatewayArgs['obj']['payForGemini(pay)void']
+      argsTuple: IgnitionGatewayArgs['tuple']['payForGemini(pay)void']
+      returns: IgnitionGatewayReturns['payForGemini(pay)void']
+    }>
+    & Record<'payForGpt4o(pay)void' | 'payForGpt4o', {
+      argsObj: IgnitionGatewayArgs['obj']['payForGpt4o(pay)void']
+      argsTuple: IgnitionGatewayArgs['tuple']['payForGpt4o(pay)void']
+      returns: IgnitionGatewayReturns['payForGpt4o(pay)void']
+    }>
+    & Record<'payForClaudeOpus(pay)void' | 'payForClaudeOpus', {
+      argsObj: IgnitionGatewayArgs['obj']['payForClaudeOpus(pay)void']
+      argsTuple: IgnitionGatewayArgs['tuple']['payForClaudeOpus(pay)void']
+      returns: IgnitionGatewayReturns['payForClaudeOpus(pay)void']
+    }>
   /**
    * Defines the shape of the state of the application.
    */
@@ -117,7 +147,9 @@ export type IgnitionGatewayTypes = {
     global: {
       keys: {
         treasuryAddress: string
-        baseModelPrice: bigint
+        geminiPrice: bigint
+        gptPrice: bigint
+        claudePrice: bigint
       }
       maps: {}
     }
@@ -214,6 +246,45 @@ export abstract class IgnitionGatewayParamsFactory {
     return {
       ...params,
       method: 'payForAi(pay)void' as const,
+      args: Array.isArray(params.args) ? params.args : [params.args.payTxn],
+    }
+  }
+  /**
+   * Constructs a no op call for the payForGemini(pay)void ABI method
+   *
+   * @param params Parameters for the call
+   * @returns An `AppClientMethodCallParams` object for the call
+   */
+  static payForGemini(params: CallParams<IgnitionGatewayArgs['obj']['payForGemini(pay)void'] | IgnitionGatewayArgs['tuple']['payForGemini(pay)void']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
+    return {
+      ...params,
+      method: 'payForGemini(pay)void' as const,
+      args: Array.isArray(params.args) ? params.args : [params.args.payTxn],
+    }
+  }
+  /**
+   * Constructs a no op call for the payForGpt4o(pay)void ABI method
+   *
+   * @param params Parameters for the call
+   * @returns An `AppClientMethodCallParams` object for the call
+   */
+  static payForGpt4o(params: CallParams<IgnitionGatewayArgs['obj']['payForGpt4o(pay)void'] | IgnitionGatewayArgs['tuple']['payForGpt4o(pay)void']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
+    return {
+      ...params,
+      method: 'payForGpt4o(pay)void' as const,
+      args: Array.isArray(params.args) ? params.args : [params.args.payTxn],
+    }
+  }
+  /**
+   * Constructs a no op call for the payForClaudeOpus(pay)void ABI method
+   *
+   * @param params Parameters for the call
+   * @returns An `AppClientMethodCallParams` object for the call
+   */
+  static payForClaudeOpus(params: CallParams<IgnitionGatewayArgs['obj']['payForClaudeOpus(pay)void'] | IgnitionGatewayArgs['tuple']['payForClaudeOpus(pay)void']> & CallOnComplete): AppClientMethodCallParams & CallOnComplete {
+    return {
+      ...params,
+      method: 'payForClaudeOpus(pay)void' as const,
       args: Array.isArray(params.args) ? params.args : [params.args.payTxn],
     }
   }
@@ -460,6 +531,36 @@ export class IgnitionGatewayClient {
       return this.appClient.params.call(IgnitionGatewayParamsFactory.payForAi(params))
     },
 
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForGemini(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call params
+     */
+    payForGemini: (params: CallParams<IgnitionGatewayArgs['obj']['payForGemini(pay)void'] | IgnitionGatewayArgs['tuple']['payForGemini(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      return this.appClient.params.call(IgnitionGatewayParamsFactory.payForGemini(params))
+    },
+
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForGpt4o(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call params
+     */
+    payForGpt4o: (params: CallParams<IgnitionGatewayArgs['obj']['payForGpt4o(pay)void'] | IgnitionGatewayArgs['tuple']['payForGpt4o(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      return this.appClient.params.call(IgnitionGatewayParamsFactory.payForGpt4o(params))
+    },
+
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForClaudeOpus(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call params
+     */
+    payForClaudeOpus: (params: CallParams<IgnitionGatewayArgs['obj']['payForClaudeOpus(pay)void'] | IgnitionGatewayArgs['tuple']['payForClaudeOpus(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      return this.appClient.params.call(IgnitionGatewayParamsFactory.payForClaudeOpus(params))
+    },
+
   }
 
   /**
@@ -484,6 +585,36 @@ export class IgnitionGatewayClient {
      */
     payForAi: (params: CallParams<IgnitionGatewayArgs['obj']['payForAi(pay)void'] | IgnitionGatewayArgs['tuple']['payForAi(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       return this.appClient.createTransaction.call(IgnitionGatewayParamsFactory.payForAi(params))
+    },
+
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForGemini(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call transaction
+     */
+    payForGemini: (params: CallParams<IgnitionGatewayArgs['obj']['payForGemini(pay)void'] | IgnitionGatewayArgs['tuple']['payForGemini(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      return this.appClient.createTransaction.call(IgnitionGatewayParamsFactory.payForGemini(params))
+    },
+
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForGpt4o(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call transaction
+     */
+    payForGpt4o: (params: CallParams<IgnitionGatewayArgs['obj']['payForGpt4o(pay)void'] | IgnitionGatewayArgs['tuple']['payForGpt4o(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      return this.appClient.createTransaction.call(IgnitionGatewayParamsFactory.payForGpt4o(params))
+    },
+
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForClaudeOpus(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call transaction
+     */
+    payForClaudeOpus: (params: CallParams<IgnitionGatewayArgs['obj']['payForClaudeOpus(pay)void'] | IgnitionGatewayArgs['tuple']['payForClaudeOpus(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      return this.appClient.createTransaction.call(IgnitionGatewayParamsFactory.payForClaudeOpus(params))
     },
 
   }
@@ -513,6 +644,39 @@ export class IgnitionGatewayClient {
       return {...result, return: result.return as unknown as (undefined | IgnitionGatewayReturns['payForAi(pay)void'])}
     },
 
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForGemini(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call result
+     */
+    payForGemini: async (params: CallParams<IgnitionGatewayArgs['obj']['payForGemini(pay)void'] | IgnitionGatewayArgs['tuple']['payForGemini(pay)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      const result = await this.appClient.send.call(IgnitionGatewayParamsFactory.payForGemini(params))
+      return {...result, return: result.return as unknown as (undefined | IgnitionGatewayReturns['payForGemini(pay)void'])}
+    },
+
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForGpt4o(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call result
+     */
+    payForGpt4o: async (params: CallParams<IgnitionGatewayArgs['obj']['payForGpt4o(pay)void'] | IgnitionGatewayArgs['tuple']['payForGpt4o(pay)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      const result = await this.appClient.send.call(IgnitionGatewayParamsFactory.payForGpt4o(params))
+      return {...result, return: result.return as unknown as (undefined | IgnitionGatewayReturns['payForGpt4o(pay)void'])}
+    },
+
+    /**
+     * Makes a call to the IgnitionGateway smart contract using the `payForClaudeOpus(pay)void` ABI method.
+     *
+     * @param params The params for the smart contract call
+     * @returns The call result
+     */
+    payForClaudeOpus: async (params: CallParams<IgnitionGatewayArgs['obj']['payForClaudeOpus(pay)void'] | IgnitionGatewayArgs['tuple']['payForClaudeOpus(pay)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
+      const result = await this.appClient.send.call(IgnitionGatewayParamsFactory.payForClaudeOpus(params))
+      return {...result, return: result.return as unknown as (undefined | IgnitionGatewayReturns['payForClaudeOpus(pay)void'])}
+    },
+
   }
 
   /**
@@ -540,7 +704,9 @@ export class IgnitionGatewayClient {
         const result = await this.appClient.state.global.getAll()
         return {
           treasuryAddress: result.treasuryAddress,
-          baseModelPrice: result.baseModelPrice,
+          geminiPrice: result.geminiPrice,
+          gptPrice: result.gptPrice,
+          claudePrice: result.claudePrice,
         }
       },
       /**
@@ -548,9 +714,17 @@ export class IgnitionGatewayClient {
        */
       treasuryAddress: async (): Promise<string | undefined> => { return (await this.appClient.state.global.getValue("treasuryAddress")) as string | undefined },
       /**
-       * Get the current value of the baseModelPrice key in global state
+       * Get the current value of the geminiPrice key in global state
        */
-      baseModelPrice: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("baseModelPrice")) as bigint | undefined },
+      geminiPrice: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("geminiPrice")) as bigint | undefined },
+      /**
+       * Get the current value of the gptPrice key in global state
+       */
+      gptPrice: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("gptPrice")) as bigint | undefined },
+      /**
+       * Get the current value of the claudePrice key in global state
+       */
+      claudePrice: async (): Promise<bigint | undefined> => { return (await this.appClient.state.global.getValue("claudePrice")) as bigint | undefined },
     },
   }
 
@@ -565,6 +739,30 @@ export class IgnitionGatewayClient {
        */
       payForAi(params: CallParams<IgnitionGatewayArgs['obj']['payForAi(pay)void'] | IgnitionGatewayArgs['tuple']['payForAi(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
         promiseChain = promiseChain.then(async () => composer.addAppCallMethodCall(await client.params.payForAi(params)))
+        resultMappers.push(undefined)
+        return this
+      },
+      /**
+       * Add a payForGemini(pay)void method call against the IgnitionGateway contract
+       */
+      payForGemini(params: CallParams<IgnitionGatewayArgs['obj']['payForGemini(pay)void'] | IgnitionGatewayArgs['tuple']['payForGemini(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
+        promiseChain = promiseChain.then(async () => composer.addAppCallMethodCall(await client.params.payForGemini(params)))
+        resultMappers.push(undefined)
+        return this
+      },
+      /**
+       * Add a payForGpt4o(pay)void method call against the IgnitionGateway contract
+       */
+      payForGpt4o(params: CallParams<IgnitionGatewayArgs['obj']['payForGpt4o(pay)void'] | IgnitionGatewayArgs['tuple']['payForGpt4o(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
+        promiseChain = promiseChain.then(async () => composer.addAppCallMethodCall(await client.params.payForGpt4o(params)))
+        resultMappers.push(undefined)
+        return this
+      },
+      /**
+       * Add a payForClaudeOpus(pay)void method call against the IgnitionGateway contract
+       */
+      payForClaudeOpus(params: CallParams<IgnitionGatewayArgs['obj']['payForClaudeOpus(pay)void'] | IgnitionGatewayArgs['tuple']['payForClaudeOpus(pay)void']> & {onComplete?: OnApplicationComplete.NoOpOC}) {
+        promiseChain = promiseChain.then(async () => composer.addAppCallMethodCall(await client.params.payForClaudeOpus(params)))
         resultMappers.push(undefined)
         return this
       },
@@ -611,6 +809,33 @@ export type IgnitionGatewayComposer<TReturns extends [...any[]] = []> = {
    * @returns The typed transaction composer so you can fluently chain multiple calls or call execute to execute all queued up transactions
    */
   payForAi(params?: CallParams<IgnitionGatewayArgs['obj']['payForAi(pay)void'] | IgnitionGatewayArgs['tuple']['payForAi(pay)void']>): IgnitionGatewayComposer<[...TReturns, IgnitionGatewayReturns['payForAi(pay)void'] | undefined]>
+
+  /**
+   * Calls the payForGemini(pay)void ABI method.
+   *
+   * @param args The arguments for the contract call
+   * @param params Any additional parameters for the call
+   * @returns The typed transaction composer so you can fluently chain multiple calls or call execute to execute all queued up transactions
+   */
+  payForGemini(params?: CallParams<IgnitionGatewayArgs['obj']['payForGemini(pay)void'] | IgnitionGatewayArgs['tuple']['payForGemini(pay)void']>): IgnitionGatewayComposer<[...TReturns, IgnitionGatewayReturns['payForGemini(pay)void'] | undefined]>
+
+  /**
+   * Calls the payForGpt4o(pay)void ABI method.
+   *
+   * @param args The arguments for the contract call
+   * @param params Any additional parameters for the call
+   * @returns The typed transaction composer so you can fluently chain multiple calls or call execute to execute all queued up transactions
+   */
+  payForGpt4o(params?: CallParams<IgnitionGatewayArgs['obj']['payForGpt4o(pay)void'] | IgnitionGatewayArgs['tuple']['payForGpt4o(pay)void']>): IgnitionGatewayComposer<[...TReturns, IgnitionGatewayReturns['payForGpt4o(pay)void'] | undefined]>
+
+  /**
+   * Calls the payForClaudeOpus(pay)void ABI method.
+   *
+   * @param args The arguments for the contract call
+   * @param params Any additional parameters for the call
+   * @returns The typed transaction composer so you can fluently chain multiple calls or call execute to execute all queued up transactions
+   */
+  payForClaudeOpus(params?: CallParams<IgnitionGatewayArgs['obj']['payForClaudeOpus(pay)void'] | IgnitionGatewayArgs['tuple']['payForClaudeOpus(pay)void']>): IgnitionGatewayComposer<[...TReturns, IgnitionGatewayReturns['payForClaudeOpus(pay)void'] | undefined]>
 
   /**
    * Makes a clear_state call to an existing instance of the IgnitionGateway smart contract.

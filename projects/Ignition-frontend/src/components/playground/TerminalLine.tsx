@@ -5,24 +5,6 @@ interface TerminalLineProps {
   entry: TerminalLogEntry
 }
 
-function StatusBadge({ status }: { status: TerminalLogEntry['status'] }) {
-  switch (status) {
-    case 'OK':
-      return <span className="badge-ok ml-2">[OK]</span>
-    case 'PENDING':
-      return <span className="badge-pending ml-2">[PENDING]</span>
-    case 'FAIL':
-      return <span className="badge-fail ml-2">[FAIL]</span>
-    case 'INFO':
-      return <span className="badge-info ml-2">[INFO]</span>
-    case 'INPUT':
-    case 'STREAM':
-      return null
-    default:
-      return null
-  }
-}
-
 export default function TerminalLine({ entry }: TerminalLineProps) {
   const [visible, setVisible] = useState(false)
 
@@ -31,49 +13,27 @@ export default function TerminalLine({ entry }: TerminalLineProps) {
     return () => clearTimeout(t)
   }, [])
 
-  const prefix = entry.prefix || '>'
   const isInput = entry.status === 'INPUT'
-  const isStream = entry.status === 'STREAM'
-  const isAi = entry.isAiResponse
+  const isError = entry.status === 'FAIL'
+
+  const containerClass = isInput ? 'justify-end' : 'justify-start'
+  const bubbleClass = isInput
+    ? 'bg-terminal-green/15 border-terminal-green/35 text-white'
+    : isError
+      ? 'bg-red-500/12 border-red-500/40 text-red-200'
+      : 'bg-white/5 border-white/10 text-gray-100'
 
   return (
     <div
-      className={`flex items-start gap-2 py-0.5 px-1 font-mono text-[13px] leading-relaxed transition-all duration-200 ${
+      className={`flex ${containerClass} py-1.5 transition-all duration-200 ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
-      } ${isAi ? 'pl-4 border-l border-terminal-green/15' : ''}`}
+      }`}
     >
-      {/* Prefix */}
-      <span
-        className={`flex-shrink-0 select-none ${
-          isInput
-            ? 'text-terminal-green text-shadow-green'
-            : isStream
-              ? 'text-terminal-teal'
-              : 'text-gray-500'
-        }`}
+      <div
+        className={`max-w-[88%] md:max-w-[78%] rounded-2xl px-3.5 py-2.5 border font-sans text-sm leading-relaxed shadow-[0_6px_20px_rgba(0,0,0,0.25)] ${bubbleClass}`}
       >
-        {prefix}
-      </span>
-
-      {/* Message */}
-      <span
-        className={`flex-1 break-all whitespace-pre-wrap ${
-          isInput
-            ? 'text-white font-medium'
-            : isAi
-              ? 'text-white/90'
-              : entry.status === 'FAIL'
-                ? 'text-red-400/90'
-                : entry.status === 'INFO'
-                  ? 'text-gray-400'
-                  : 'text-gray-400'
-        }`}
-      >
-        {entry.message}
-      </span>
-
-      {/* Status badge */}
-      <StatusBadge status={entry.status} />
+        <p className="whitespace-pre-wrap break-words">{entry.message}</p>
+      </div>
     </div>
   )
 }
